@@ -1,0 +1,39 @@
+INDIE DIETYY — DATASET AUDIT REPORT
+Generated: 2026-05-05T16:07:49.705066
+Total meals: 38,163
+Overall quality: EXCELLENT
+Macro math failures: 113 (0.3%)
+Impossible calories: 0
+GI consistency issues: 2292
+Allergen blind spots: 0
+Clinical gaps: 0 states
+
+STATE ROW COUNTS:
+  Andhra Pradesh: 1,344
+  Arunachal Pradesh: 1,344
+  Assam: 1,344
+  Bihar: 1,344
+  Chhattisgarh: 1,344
+  Goa: 1,344
+  Gujarat: 1,344
+  Haryana: 1,344
+  Himachal Pradesh: 1,352
+  Jharkhand: 1,344
+  Karnataka: 1,345
+  Kerala: 1,344
+  Madhya Pradesh: 1,344
+  Maharashtra: 1,344
+  Manipur: 1,344
+  Meghalaya: 1,344
+  Mizoram: 1,344
+  Nagaland: 1,344
+  Odisha: 1,344
+  Punjab: 1,554
+  Rajasthan: 1,344
+  Sikkim: 1,344
+  Tamil Nadu: 1,344
+  Telangana: 1,459
+  Tripura: 1,344
+  Uttar Pradesh: 1,541
+  Uttarakhand: 1,344
+  West Bengal: 1,344

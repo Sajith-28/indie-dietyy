@@ -1,0 +1,959 @@
+import './index.css';
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+
+const STORAGE = {
+  profile: 'app_profile',
+  page: 'app_current_page',
+  step: 'app_current_step',
+  plan: 'app_last_plan',
+  language: 'app_ui_language',
+};
+
+const DEFAULT_PROFILE = {
+  name: '',
+  age: 30,
+  weight_kg: 70,
+  height_cm: 170,
+  state: 'Kerala',
+  diet_type: 'Vegetarian',
+  meat_prefs: [],
+  goal: 'balanced',
+  allergies: '',
+  has_diabetes: false,
+  blood_sugar: '',
+  has_bp: false,
+  systolic_bp: '',
+  diastolic_bp: '',
+  has_cholesterol: false,
+  cholesterol: '',
+};
+
+const LANGUAGES = {
+  en: 'English',
+  hi: 'Hindi',
+  bn: 'Bengali',
+  te: 'Telugu',
+  mr: 'Marathi',
+  ta: 'Tamil',
+  ur: 'Urdu',
+  gu: 'Gujarati',
+  kn: 'Kannada',
+  ml: 'Malayalam',
+  pa: 'Punjabi',
+  as: 'Assamese',
+  or: 'Odia',
+  sa: 'Sanskrit',
+  sd: 'Sindhi',
+  ne: 'Nepali',
+  bho: 'Bhojpuri',
+  mai: 'Maithili',
+  gom: 'Konkani',
+  mni: 'Meiteilon',
+  doi: 'Dogri',
+  sat: 'Santali',
+  lus: 'Mizo',
+  kok: 'Kokborok',
+  kha: 'Khasi',
+  gar: 'Garo',
+  awa: 'Awadhi',
+  mag: 'Magahi',
+};
+
+const STATES = [
+  'Andhra Pradesh',
+  'Arunachal Pradesh',
+  'Assam',
+  'Bihar',
+  'Chhattisgarh',
+  'Goa',
+  'Gujarat',
+  'Haryana',
+  'Himachal Pradesh',
+  'Jharkhand',
+  'Karnataka',
+  'Kerala',
+  'Madhya Pradesh',
+  'Maharashtra',
+  'Manipur',
+  'Meghalaya',
+  'Mizoram',
+  'Nagaland',
+  'Odisha',
+  'Punjab',
+  'Rajasthan',
+  'Sikkim',
+  'Tamil Nadu',
+  'Telangana',
+  'Tripura',
+  'Uttar Pradesh',
+  'Uttarakhand',
+  'West Bengal',
+];
+
+const MEATS = ['Chicken', 'Mutton', 'Beef', 'Pork', 'Fish', 'Crab', 'Prawns', 'Egg'];
+
+const TEXT = {
+  appBadge: 'Clinical Nutrition OS',
+  title: 'Indie Dietyy',
+  subtitle: 'Advanced Clinical AI Diet Planner',
+  landingCopy: 'Personalized Indian diet plans shaped by region, preferences, allergies, BMI, and clinical markers.',
+  startProfile: 'Start Clinical Profile',
+  viewLastPlan: 'View Last Generated Plan',
+  yourProfile: 'Your Profile',
+  personalDetails: 'Personal Details',
+  personalCopy: 'Start with the essentials. BMI updates live as your body metrics change.',
+  name: 'Name',
+  namePlaceholder: 'Enter your name',
+  age: 'Age',
+  weight: 'Weight (kg)',
+  height: 'Height (cm)',
+  calculatedBmi: 'Calculated BMI',
+  regionDiet: 'Region & Diet',
+  regionCopy: 'Tell the planner where your food habits live and what diet style it should respect.',
+  state: 'State',
+  dietType: 'Diet Type',
+  goal: 'Your Goal',
+  meatPrefs: 'Select Preferred Meats (Mandatory)',
+  meatCopy: 'Choose the proteins you actually want included in the weekly plan.',
+  clinical: 'Clinical Conditions (Optional)',
+  clinicalCopy: 'Add clinical signals only if relevant. These values are sent to the AI backend for safer recommendations.',
+  diabetes: 'Diabetes (Check to add)',
+  bloodSugar: 'Fasting Blood Sugar (mg/dL)',
+  bp: 'Blood Pressure (Check to add)',
+  sysBp: 'Systolic BP (Upper, e.g. 120)',
+  diaBp: 'Diastolic BP (Lower, e.g. 80)',
+  cholesterolCheck: 'High Cholesterol (Check to add)',
+  cholesterolLevel: 'Total Cholesterol (mg/dL)',
+  allergies: 'Allergies (Free Text)',
+  allergiesPlaceholder: 'e.g. Milk, Peanuts, Ghee...',
+  review: 'Allergies & Review',
+  reviewCopy: 'One last scan before the backend creates your personalized 7-day plan.',
+  generate: 'Generate 7-Day Plan',
+  generating: 'AI is generating plan...',
+  translating: 'Translating UI...',
+  next: 'Next',
+  back: 'Back',
+  backProfile: 'Back to Edit Profile',
+  downloadPdf: 'Download PDF',
+  emptyState: 'Fill out your medical profile to generate an intelligent, safe diet plan.',
+  user: 'User',
+  aiScore: 'AI Score',
+  kcal: 'kcal',
+  protein: 'Protein',
+  carbs: 'Carbs',
+  fat: 'Fat',
+  fiber: 'Fiber',
+  day: 'Day',
+  ingredients: 'Ingredients',
+  bmi: 'BMI',
+  failed: 'Failed to connect to the AI Backend.',
+  disclaimer: 'Clinical Disclaimer: This plan is AI-generated. Consult a registered dietitian before following if you have a diagnosed medical condition.',
+  optVegetarian: 'Vegetarian',
+  optNonVegetarian: 'Non-Vegetarian',
+  optBoth: 'Both',
+  optVegan: 'Vegan',
+  optBalanced: 'Balanced Diet',
+  optWeightLoss: 'Weight Loss',
+  optWeightGain: 'Weight Gain',
+  analyzingBmi: 'Analyzing BMI',
+  checkingClinical: 'Checking clinical markers',
+  balancingMeals: 'Balancing regional meals',
+  optimizingMacros: 'Optimizing macros',
+  preparingPlan: 'Preparing 7-day plan',
+  savedPlan: 'Saved Plan',
+  noPlanTitle: 'No diet plan yet',
+  noPlanCopy: 'Create your profile first and Indie Dietyy will render the generated plan here.',
+  planReady: 'Your clinical diet plan is ready',
+};
+
+const root = document.getElementById('root');
+
+let state = {
+  profile: readJson(STORAGE.profile, DEFAULT_PROFILE),
+  page: localStorage.getItem(STORAGE.page) || 'landing',
+  step: Number(localStorage.getItem(STORAGE.step) || 0),
+  plan: readJson(STORAGE.plan, null),
+  language: localStorage.getItem(STORAGE.language) || 'en',
+  dynamicText: {},
+  isTranslating: false,
+  isGenerating: false,
+  error: '',
+};
+
+if (state.page === 'result' && !state.plan) {
+  state.page = 'landing';
+}
+
+const steps = [
+  { id: 'personal', titleKey: 'personalDetails' },
+  { id: 'region', titleKey: 'regionDiet' },
+  { id: 'meat', titleKey: 'meatPrefs', conditional: true },
+  { id: 'clinical', titleKey: 'clinical' },
+  { id: 'review', titleKey: 'review' },
+];
+
+function readJson(key, fallback) {
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return structuredCloneSafe(fallback);
+    const parsed = JSON.parse(raw);
+    return fallback && typeof fallback === 'object' && !Array.isArray(fallback)
+      ? { ...fallback, ...parsed }
+      : parsed;
+  } catch {
+    return structuredCloneSafe(fallback);
+  }
+}
+
+function structuredCloneSafe(value) {
+  return value === null ? null : JSON.parse(JSON.stringify(value));
+}
+
+function persist() {
+  localStorage.setItem(STORAGE.profile, JSON.stringify(state.profile));
+  localStorage.setItem(STORAGE.page, state.page);
+  localStorage.setItem(STORAGE.step, String(state.step));
+  localStorage.setItem(STORAGE.language, state.language);
+  if (state.plan) {
+    localStorage.setItem(STORAGE.plan, JSON.stringify(state.plan));
+  }
+}
+
+function t(key) {
+  return state.dynamicText[key] || TEXT[key] || key;
+}
+
+function esc(value) {
+  return String(value ?? '')
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#039;');
+}
+
+function icon(name) {
+  const icons = {
+    spark: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.9 5.2L19 10l-5.1 1.8L12 17l-1.9-5.2L5 10l5.1-1.8L12 3z"/><path d="M19 15l.9 2.1L22 18l-2.1.9L19 21l-.9-2.1L16 18l2.1-.9L19 15z"/></svg>',
+    globe: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 0 20"/><path d="M12 2a15.3 15.3 0 0 0 0 20"/></svg>',
+    user: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 21a8 8 0 0 0-16 0"/><circle cx="12" cy="7" r="4"/></svg>',
+    heart: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 14c1.5-1.5 3-3.2 3-5.5A5.5 5.5 0 0 0 12 5a5.5 5.5 0 0 0-10 3.5C2 10.8 3.5 12.5 5 14l7 7 7-7z"/><path d="M3.2 12H8l2-3 4 6 2-3h4.8"/></svg>',
+    warning: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>',
+    arrow: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>',
+    next: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>',
+    download: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>',
+    utensils: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 2v7a4 4 0 0 0 4 4v9"/><path d="M7 2v20"/><path d="M11 2v7a4 4 0 0 1-4 4"/><path d="M21 15V2a5 5 0 0 0-5 5v6a2 2 0 0 0 2 2h3z"/></svg>',
+    pulse: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg>',
+    check: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>',
+  };
+  return icons[name] || '';
+}
+
+function bmiValue() {
+  const weight = Number.parseFloat(state.profile.weight_kg);
+  const height = Number.parseFloat(state.profile.height_cm);
+  if (!weight || !height) return '0.0';
+  return (weight / ((height / 100) ** 2)).toFixed(1);
+}
+
+function showMeatStep() {
+  return ['Non-Vegetarian', 'Both'].includes(state.profile.diet_type);
+}
+
+function visibleSteps() {
+  return steps.filter((step) => !step.conditional || showMeatStep());
+}
+
+function currentStep() {
+  const list = visibleSteps();
+  if (state.step >= list.length) state.step = list.length - 1;
+  if (state.step < 0) state.step = 0;
+  return list[state.step];
+}
+
+function transitionTo(page, step = state.step) {
+  const wipe = document.querySelector('.transition-wipe');
+  if (wipe) {
+    wipe.classList.remove('is-active');
+    void wipe.offsetWidth;
+    wipe.classList.add('is-active');
+  }
+  window.setTimeout(() => {
+    state.page = page;
+    state.step = step;
+    state.error = '';
+    persist();
+    render();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 260);
+}
+
+function render() {
+  root.innerHTML = `
+    <div class="app-shell">
+      <div class="transition-wipe" aria-hidden="true"></div>
+      <div class="app-frame">
+        ${renderHeader()}
+        ${renderPage()}
+      </div>
+    </div>
+  `;
+  bindEvents();
+  bindHeroTilt();
+}
+
+function renderHeader() {
+  return `
+    <header class="app-header">
+      <div class="brand-lockup">
+        <div class="brand-mark" aria-hidden="true">${icon('pulse')}</div>
+        <div>
+          <h1 class="brand-title">${esc(t('title'))}</h1>
+          <p class="brand-subtitle">${esc(t('subtitle'))}</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        ${state.page !== 'landing' ? `<button class="btn btn-secondary" type="button" data-action="landing" aria-label="Home">${icon('arrow')} Home</button>` : ''}
+        <label class="language-control" for="language-switcher">
+          ${icon('globe')}
+          <select id="language-switcher" aria-label="Language">
+            ${Object.entries(LANGUAGES).map(([code, label]) => `
+              <option value="${code}" ${state.language === code ? 'selected' : ''}>${esc(label)}</option>
+            `).join('')}
+          </select>
+          ${state.isTranslating ? '<span class="spinner" aria-label="Translating"></span>' : ''}
+        </label>
+      </div>
+    </header>
+  `;
+}
+
+function renderPage() {
+  if (state.page === 'wizard') return renderWizard();
+  if (state.page === 'generating') return renderGenerating();
+  if (state.page === 'result') return renderResult();
+  return renderLanding();
+}
+
+function renderLanding() {
+  return `
+    <main class="view hero-grid">
+      <section>
+        <span class="hero-kicker">${icon('spark')} ${esc(t('appBadge'))}</span>
+        <h2 class="hero-title"><span class="shiny">${esc(t('title'))}</span></h2>
+        <p class="hero-copy">${esc(t('landingCopy'))}</p>
+        <div class="hero-actions">
+          <button class="btn btn-primary" type="button" data-action="start">${icon('next')} ${esc(t('startProfile'))}</button>
+          ${state.plan ? `<button class="btn btn-secondary" id="view-last-plan-btn" type="button" data-action="result">${icon('utensils')} ${esc(t('viewLastPlan'))}</button>` : ''}
+        </div>
+        <div class="hero-stats" aria-label="Product highlights">
+          <div class="micro-stat"><strong>7</strong><span>${esc(t('day'))} plan engine</span></div>
+          <div class="micro-stat"><strong>${esc(bmiValue())}</strong><span>${esc(t('calculatedBmi'))}</span></div>
+          <div class="micro-stat"><strong>28</strong><span>Indian language options</span></div>
+        </div>
+      </section>
+      <section class="hero-visual" aria-label="Animated diet planning dashboard preview">
+        <div class="clinical-orbit" aria-hidden="true"></div>
+        <div class="float-badge one">${icon('heart')}<div><strong>Clinical Safety</strong><br><span class="brand-subtitle">Markers-aware meals</span></div></div>
+        <div class="float-badge two">${icon('utensils')}<div><strong>Regional Meals</strong><br><span class="brand-subtitle">Indian diet patterns</span></div></div>
+        <div class="device-card" id="hero-device">
+          <div class="device-screen">
+            <div class="screen-top">
+              <div class="screen-logo"><span class="pulse-dot"></span>${esc(t('title'))}</div>
+              <span class="badge">${esc(t('aiScore'))} 96</span>
+            </div>
+            <div class="screen-chart" aria-hidden="true"></div>
+            <div class="mock-grid">
+              <div class="mock-card">
+                <div class="mock-label">${esc(t('bmi'))}</div>
+                <div class="mock-value">${esc(bmiValue())}</div>
+                <div class="mock-bar"><span style="width: 68%"></span></div>
+              </div>
+              <div class="mock-card">
+                <div class="mock-label">${esc(t('protein'))}</div>
+                <div class="mock-value">82g</div>
+                <div class="mock-bar"><span style="width: 74%"></span></div>
+              </div>
+              <div class="mock-card wide">
+                <div class="mock-label">${esc(t('planReady'))}</div>
+                <div class="mock-value">Kerala balanced protocol</div>
+                <div class="mock-bar"><span style="width: 91%"></span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  `;
+}
+
+function renderWizard() {
+  const list = visibleSteps();
+  const active = currentStep();
+  return `
+    <main class="view wizard-layout">
+      <aside class="panel step-rail" aria-label="Profile steps">
+        <p class="rail-title">${esc(t('yourProfile'))}</p>
+        <div class="step-list">
+          ${list.map((step, index) => `
+            <div class="step-pill ${index === state.step ? 'is-active' : ''} ${index < state.step ? 'is-done' : ''}">
+              <span class="step-number">${index < state.step ? icon('check') : index + 1}</span>
+              <strong>${esc(t(step.titleKey))}</strong>
+            </div>
+          `).join('')}
+        </div>
+      </aside>
+      <section class="panel wizard-card">
+        <form id="profile-form" novalidate>
+          <div class="wizard-card-inner" data-step="${esc(active.id)}">
+            ${renderStep(active.id)}
+            ${state.error ? `<div class="error-box" role="alert">${esc(state.error)}</div>` : ''}
+            ${renderWizardActions()}
+          </div>
+        </form>
+      </section>
+    </main>
+  `;
+}
+
+function renderStep(stepId) {
+  if (stepId === 'personal') return renderPersonalStep();
+  if (stepId === 'region') return renderRegionStep();
+  if (stepId === 'meat') return renderMeatStep();
+  if (stepId === 'clinical') return renderClinicalStep();
+  return renderReviewStep();
+}
+
+function renderStepHeader(kicker, title, copy, extra = '') {
+  return `
+    <div class="step-header">
+      <div>
+        <span class="section-kicker">${kicker}</span>
+        <h2 class="step-title">${esc(title)}</h2>
+        <p class="step-copy">${esc(copy)}</p>
+      </div>
+      ${extra}
+    </div>
+  `;
+}
+
+function renderPersonalStep() {
+  return `
+    ${renderStepHeader(`${icon('user')} ${esc(t('yourProfile'))}`, t('personalDetails'), t('personalCopy'), `
+      <div class="bmi-chip"><span>${esc(t('calculatedBmi'))}</span><strong>${esc(bmiValue())}</strong></div>
+    `)}
+    <div class="form-grid">
+      ${field('input-name', 'name', t('name'), 'text', state.profile.name, t('namePlaceholder'), true, 'full')}
+      ${field('input-age', 'age', t('age'), 'number', state.profile.age, '', true)}
+      ${field('input-weight', 'weight_kg', t('weight'), 'number', state.profile.weight_kg, '', true)}
+      ${field('input-height', 'height_cm', t('height'), 'number', state.profile.height_cm, '', true)}
+    </div>
+  `;
+}
+
+function renderRegionStep() {
+  return `
+    ${renderStepHeader(`${icon('utensils')} ${esc(t('regionDiet'))}`, t('regionDiet'), t('regionCopy'))}
+    <div class="form-grid">
+      <div class="field">
+        <label for="select-state">${esc(t('state'))}</label>
+        <select class="select" id="select-state" name="state">
+          ${STATES.map((item) => `<option value="${esc(item)}" ${state.profile.state === item ? 'selected' : ''}>${esc(item)}</option>`).join('')}
+        </select>
+      </div>
+      <div class="field">
+        <label for="select-diet-type">${esc(t('dietType'))}</label>
+        <select class="select" id="select-diet-type" name="diet_type">
+          ${option('Vegetarian', t('optVegetarian'), state.profile.diet_type)}
+          ${option('Non-Vegetarian', t('optNonVegetarian'), state.profile.diet_type)}
+          ${option('Both', t('optBoth'), state.profile.diet_type)}
+          ${option('Vegan', t('optVegan'), state.profile.diet_type)}
+        </select>
+      </div>
+      <div class="field full">
+        <label for="select-goal">${esc(t('goal'))}</label>
+        <select class="select" id="select-goal" name="goal">
+          ${option('balanced', t('optBalanced'), state.profile.goal)}
+          ${option('weight_loss', t('optWeightLoss'), state.profile.goal)}
+          ${option('weight_gain', t('optWeightGain'), state.profile.goal)}
+        </select>
+      </div>
+    </div>
+  `;
+}
+
+function renderMeatStep() {
+  return `
+    ${renderStepHeader(`${icon('utensils')} ${esc(t('dietType'))}`, t('meatPrefs'), t('meatCopy'))}
+    <div class="chip-grid">
+      ${MEATS.map((meat) => `
+        <label class="chip">
+          <input type="checkbox" name="meat_prefs" value="${esc(meat)}" ${state.profile.meat_prefs.includes(meat) ? 'checked' : ''}>
+          <span>${esc(meat)}</span>
+        </label>
+      `).join('')}
+    </div>
+  `;
+}
+
+function renderClinicalStep() {
+  return `
+    ${renderStepHeader(`${icon('heart')} Medical Signals`, t('clinical'), t('clinicalCopy'))}
+    <div class="clinical-grid">
+      <label class="checkbox-card">
+        <input id="check-diabetes" type="checkbox" name="has_diabetes" ${state.profile.has_diabetes ? 'checked' : ''}>
+        <span>${esc(t('diabetes'))}</span>
+      </label>
+      ${state.profile.has_diabetes ? `
+        <div class="conditional-fields">
+          ${field('input-blood-sugar', 'blood_sugar', t('bloodSugar'), 'number', state.profile.blood_sugar, t('bloodSugar'), true, 'full')}
+        </div>` : ''}
+
+      <label class="checkbox-card">
+        <input id="check-bp" type="checkbox" name="has_bp" ${state.profile.has_bp ? 'checked' : ''}>
+        <span>${esc(t('bp'))}</span>
+      </label>
+      ${state.profile.has_bp ? `
+        <div class="conditional-fields">
+          ${field('input-systolic', 'systolic_bp', t('sysBp'), 'number', state.profile.systolic_bp, t('sysBp'), true)}
+          ${field('input-diastolic', 'diastolic_bp', t('diaBp'), 'number', state.profile.diastolic_bp, t('diaBp'), true)}
+        </div>` : ''}
+
+      <label class="checkbox-card">
+        <input id="check-cholesterol" type="checkbox" name="has_cholesterol" ${state.profile.has_cholesterol ? 'checked' : ''}>
+        <span>${esc(t('cholesterolCheck'))}</span>
+      </label>
+      ${state.profile.has_cholesterol ? `
+        <div class="conditional-fields">
+          ${field('input-cholesterol', 'cholesterol', t('cholesterolLevel'), 'number', state.profile.cholesterol, t('cholesterolLevel'), true, 'full')}
+        </div>` : ''}
+    </div>
+  `;
+}
+
+function renderReviewStep() {
+  const profile = state.profile;
+  return `
+    ${renderStepHeader(`${icon('warning')} Safety Review`, t('review'), t('reviewCopy'))}
+    <div class="field">
+      <label for="input-allergies">${icon('warning')} ${esc(t('allergies'))}</label>
+      <textarea class="textarea" id="input-allergies" name="allergies" rows="3" placeholder="${esc(t('allergiesPlaceholder'))}">${esc(profile.allergies)}</textarea>
+    </div>
+    <div class="review-grid" aria-label="Profile review">
+      ${reviewItem(t('name'), profile.name || '-')}
+      ${reviewItem(t('calculatedBmi'), bmiValue())}
+      ${reviewItem(t('state'), profile.state)}
+      ${reviewItem(t('dietType'), profile.diet_type)}
+      ${reviewItem(t('goal'), goalLabel(profile.goal))}
+      ${reviewItem(t('meatPrefs'), profile.meat_prefs.length ? profile.meat_prefs.join(', ') : '-')}
+      ${reviewItem(t('clinical'), clinicalSummary())}
+      ${reviewItem(t('allergies'), profile.allergies || '-')}
+    </div>
+  `;
+}
+
+function renderWizardActions() {
+  const list = visibleSteps();
+  const isLast = state.step === list.length - 1;
+  return `
+    <div class="wizard-actions">
+      <button class="btn btn-secondary" type="button" data-action="${state.step === 0 ? 'landing' : 'prev'}">${icon('arrow')} ${esc(t('back'))}</button>
+      <button class="btn btn-primary" id="${isLast ? 'submit-btn' : 'next-step-btn'}" type="button" data-action="${isLast ? 'submit' : 'next'}" ${state.isTranslating || state.isGenerating ? 'disabled' : ''}>
+        ${state.isGenerating ? '<span class="spinner"></span>' : icon(isLast ? 'spark' : 'next')}
+        ${esc(state.isTranslating ? t('translating') : isLast ? t('generate') : t('next'))}
+      </button>
+    </div>
+  `;
+}
+
+function renderGenerating() {
+  return `
+    <main class="view loading-stage">
+      <section>
+        <div class="scanner" aria-hidden="true"><div class="scanner-core"></div></div>
+        <span class="section-kicker">${icon('spark')} AI Clinical Engine</span>
+        <h2 class="step-title">${esc(t('generating'))}</h2>
+        <div class="status-lines" aria-label="Generation progress">
+          <div class="status-line">${esc(t('analyzingBmi'))}</div>
+          <div class="status-line">${esc(t('checkingClinical'))}</div>
+          <div class="status-line">${esc(t('balancingMeals'))}</div>
+          <div class="status-line">${esc(t('optimizingMacros'))}</div>
+          <div class="status-line">${esc(t('preparingPlan'))}</div>
+        </div>
+        ${state.error ? `<div class="error-box" role="alert">${esc(state.error)}</div>` : ''}
+      </section>
+    </main>
+  `;
+}
+
+function renderResult() {
+  if (!state.plan) {
+    return `
+      <main class="view empty-plan panel">
+        <h2>${esc(t('noPlanTitle'))}</h2>
+        <p class="step-copy">${esc(t('noPlanCopy'))}</p>
+        <div class="hero-actions" style="justify-content:center;margin-top:22px">
+          <button class="btn btn-primary" type="button" data-action="start">${icon('next')} ${esc(t('startProfile'))}</button>
+        </div>
+      </main>
+    `;
+  }
+
+  const plan = state.plan;
+  const metadata = plan.metadata || {};
+  const classifications = metadata.medical_classifications || {};
+  return `
+    <main class="view">
+      <div class="result-actions">
+        <button class="btn btn-secondary" id="back-to-profile-btn" type="button" data-action="wizard">${icon('arrow')} ${esc(t('backProfile'))}</button>
+        <button class="btn btn-primary" id="download-pdf-btn" type="button" data-action="pdf">${icon('download')} ${esc(t('downloadPdf'))}</button>
+      </div>
+
+      <section class="print-surface" id="diet-plan-print">
+        <div class="summary-card">
+          <span class="section-kicker">${icon('pulse')} ${esc(t('savedPlan'))}</span>
+          <h2 class="summary-title">${esc(metadata.title || t('planReady'))}</h2>
+          <div class="badge-row">
+            <span class="badge">${esc(t('user'))}: ${esc(metadata.user_name || state.profile.name || 'Guest')}</span>
+            <span class="badge">${esc(t('bmi'))}: ${esc(metadata.bmi ?? bmiValue())}</span>
+            ${Object.entries(classifications).map(([key, value]) => `
+              <span class="badge caution">${esc(key.replaceAll('_', ' '))}: ${esc(value)}</span>
+            `).join('')}
+          </div>
+          <p class="disclaimer">${esc(metadata.disclaimer || t('disclaimer'))}</p>
+        </div>
+        ${renderDietDays(plan.diet_plan || {})}
+      </section>
+    </main>
+  `;
+}
+
+function renderDietDays(dietPlan) {
+  const entries = Object.entries(dietPlan);
+  if (!entries.length) {
+    return `<div class="day-card"><h3>${esc(t('noPlanTitle'))}</h3><p class="ingredients">${esc(t('noPlanCopy'))}</p></div>`;
+  }
+  return entries.map(([day, meals]) => `
+    <article class="day-card">
+      <h3>${esc(day)}</h3>
+      ${Object.entries(meals || {}).map(([mealType, meal]) => renderMeal(mealType, meal || {})).join('')}
+    </article>
+  `).join('');
+}
+
+function renderMeal(mealType, meal) {
+  return `
+    <section class="meal-slot">
+      <div class="meal-title-row">
+        <span class="meal-type">${esc(mealType)}</span>
+        <span class="badge">${esc(t('aiScore'))}: ${esc(meal.ai_score ?? '-')}/100</span>
+      </div>
+      <p class="meal-name">${esc(meal.meal_name || '-')}</p>
+      <div class="macro-row">
+        <span class="macro">Calories: ${esc(meal.calories ?? '-')} ${esc(t('kcal'))}</span>
+        <span class="macro">${esc(t('protein'))}: ${esc(meal.protein_g ?? '-')}g</span>
+        <span class="macro">${esc(t('carbs'))}: ${esc(meal.carbs_g ?? '-')}g</span>
+        <span class="macro">${esc(t('fat'))}: ${esc(meal.fat_g ?? '-')}g</span>
+        ${meal.fiber_g !== undefined && meal.fiber_g !== null ? `<span class="macro">${esc(t('fiber'))}: ${esc(meal.fiber_g)}g</span>` : ''}
+      </div>
+      <p class="ingredients"><strong>${esc(t('ingredients'))}:</strong> ${esc(meal.ingredients || '-')}</p>
+    </section>
+  `;
+}
+
+function field(id, name, label, type, value, placeholder = '', required = false, className = '') {
+  return `
+    <div class="field ${className}">
+      <label for="${esc(id)}">${esc(label)}</label>
+      <input class="input" id="${esc(id)}" name="${esc(name)}" type="${esc(type)}" value="${esc(value)}" placeholder="${esc(placeholder)}" ${required ? 'required' : ''}>
+    </div>
+  `;
+}
+
+function option(value, label, selected) {
+  return `<option value="${esc(value)}" ${selected === value ? 'selected' : ''}>${esc(label)}</option>`;
+}
+
+function reviewItem(label, value) {
+  return `<div class="review-item"><span>${esc(label)}</span><strong>${esc(value)}</strong></div>`;
+}
+
+function goalLabel(goal) {
+  return {
+    balanced: t('optBalanced'),
+    weight_loss: t('optWeightLoss'),
+    weight_gain: t('optWeightGain'),
+  }[goal] || goal;
+}
+
+function clinicalSummary() {
+  const items = [];
+  if (state.profile.has_diabetes) items.push(`${t('diabetes')}: ${state.profile.blood_sugar || '-'}`);
+  if (state.profile.has_bp) items.push(`${t('bp')}: ${state.profile.systolic_bp || '-'}/${state.profile.diastolic_bp || '-'}`);
+  if (state.profile.has_cholesterol) items.push(`${t('cholesterolCheck')}: ${state.profile.cholesterol || '-'}`);
+  return items.length ? items.join(' | ') : '-';
+}
+
+function bindEvents() {
+  const language = document.getElementById('language-switcher');
+  if (language) {
+    language.addEventListener('change', async (event) => {
+      state.language = event.target.value;
+      localStorage.setItem(STORAGE.language, state.language);
+      await loadTranslations();
+      render();
+    });
+  }
+
+  root.querySelectorAll('[data-action]').forEach((element) => {
+    element.addEventListener('click', handleAction);
+  });
+
+  const form = document.getElementById('profile-form');
+  if (form) {
+    form.addEventListener('input', handleFormChange);
+    form.addEventListener('change', handleFormChange);
+    form.addEventListener('submit', (event) => event.preventDefault());
+  }
+}
+
+function handleAction(event) {
+  const action = event.currentTarget.dataset.action;
+  if (action === 'start') {
+    transitionTo('wizard', 0);
+  } else if (action === 'landing') {
+    transitionTo('landing', 0);
+  } else if (action === 'result') {
+    transitionTo('result');
+  } else if (action === 'wizard') {
+    transitionTo('wizard', Math.min(state.step, visibleSteps().length - 1));
+  } else if (action === 'prev') {
+    transitionTo('wizard', Math.max(0, state.step - 1));
+  } else if (action === 'next') {
+    goNext();
+  } else if (action === 'submit') {
+    submitProfile();
+  } else if (action === 'pdf') {
+    downloadPdf();
+  }
+}
+
+function handleFormChange(event) {
+  const target = event.target;
+  if (!target.name) return;
+
+  if (target.name === 'meat_prefs') {
+    const next = new Set(state.profile.meat_prefs);
+    if (target.checked) next.add(target.value);
+    else next.delete(target.value);
+    state.profile.meat_prefs = Array.from(next);
+  } else if (target.type === 'checkbox') {
+    state.profile[target.name] = target.checked;
+  } else {
+    state.profile[target.name] = target.value;
+  }
+
+  if (!showMeatStep()) {
+    state.profile.meat_prefs = [];
+  }
+
+  persist();
+  if (['has_diabetes', 'has_bp', 'has_cholesterol', 'diet_type'].includes(target.name)) {
+    render();
+  } else if (['weight_kg', 'height_cm'].includes(target.name)) {
+    const chip = document.querySelector('.bmi-chip strong');
+    if (chip) chip.textContent = bmiValue();
+  }
+}
+
+function validateCurrentStep() {
+  const active = currentStep().id;
+  const requiredIds = {
+    personal: ['input-name', 'input-age', 'input-weight', 'input-height'],
+    region: ['select-state', 'select-diet-type', 'select-goal'],
+    meat: [],
+    clinical: [],
+    review: [],
+  }[active] || [];
+
+  if (active === 'meat' && showMeatStep() && state.profile.meat_prefs.length === 0) {
+    state.error = t('meatPrefs');
+    render();
+    return false;
+  }
+
+  if (active === 'clinical') {
+    if (state.profile.has_diabetes) requiredIds.push('input-blood-sugar');
+    if (state.profile.has_bp) requiredIds.push('input-systolic', 'input-diastolic');
+    if (state.profile.has_cholesterol) requiredIds.push('input-cholesterol');
+  }
+
+  for (const id of requiredIds) {
+    const element = document.getElementById(id);
+    if (element && !element.checkValidity()) {
+      element.reportValidity();
+      return false;
+    }
+  }
+
+  state.error = '';
+  return true;
+}
+
+function goNext() {
+  if (!validateCurrentStep()) return;
+  const nextStep = Math.min(state.step + 1, visibleSteps().length - 1);
+  transitionTo('wizard', nextStep);
+}
+
+function buildPayload() {
+  const profile = state.profile;
+  const conditions = [];
+  if (profile.has_diabetes) conditions.push('diabetes');
+  if (profile.has_bp) conditions.push('hypertension');
+  if (profile.has_cholesterol) conditions.push('cholesterol');
+
+  return {
+    name: profile.name,
+    age: Number.parseInt(profile.age, 10),
+    weight_kg: Number.parseFloat(profile.weight_kg),
+    height_cm: Number.parseFloat(profile.height_cm),
+    state: profile.state,
+    diet_type: profile.diet_type,
+    meat_prefs: profile.meat_prefs,
+    goal: profile.goal,
+    language: state.language,
+    allergies: profile.allergies,
+    conditions,
+    blood_sugar: profile.has_diabetes ? Number.parseFloat(profile.blood_sugar) : null,
+    systolic_bp: profile.has_bp ? Number.parseFloat(profile.systolic_bp) : null,
+    diastolic_bp: profile.has_bp ? Number.parseFloat(profile.diastolic_bp) : null,
+    cholesterol: profile.has_cholesterol ? Number.parseFloat(profile.cholesterol) : null,
+  };
+}
+
+async function submitProfile() {
+  if (!validateCurrentStep() || state.isTranslating) return;
+  state.isGenerating = true;
+  state.error = '';
+  state.page = 'generating';
+  persist();
+  render();
+
+  try {
+    const response = await fetch(`${API_URL}/api/generate_plan`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(buildPayload()),
+    });
+
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(data?.detail || t('failed'));
+    }
+
+    state.plan = data;
+    localStorage.setItem(STORAGE.plan, JSON.stringify(data));
+    state.isGenerating = false;
+    transitionTo('result');
+  } catch (error) {
+    state.isGenerating = false;
+    state.error = error.message || t('failed');
+    state.page = 'wizard';
+    persist();
+    render();
+  }
+}
+
+async function loadTranslations() {
+  state.dynamicText = {};
+  if (state.language === 'en') {
+    state.isTranslating = false;
+    return;
+  }
+
+  const cacheKey = `ui_cache_vanilla_${state.language}`;
+  try {
+    const cached = localStorage.getItem(cacheKey);
+    if (cached) {
+      state.dynamicText = JSON.parse(cached);
+      state.isTranslating = false;
+      return;
+    }
+  } catch {
+    localStorage.removeItem(cacheKey);
+  }
+
+  state.isTranslating = true;
+  render();
+
+  try {
+    const entries = Object.entries(TEXT);
+    const response = await fetch(`${API_URL}/api/translate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        texts: entries.map(([, value]) => value),
+        target_lang: state.language,
+      }),
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data?.detail || 'Translation failed');
+    state.dynamicText = Object.fromEntries(entries.map(([key, value]) => [key, data[value] || value]));
+    localStorage.setItem(cacheKey, JSON.stringify(state.dynamicText));
+  } catch {
+    state.dynamicText = {};
+  } finally {
+    state.isTranslating = false;
+    persist();
+  }
+}
+
+async function downloadPdf() {
+  const element = document.getElementById('diet-plan-print');
+  if (!element) return;
+  const safeName = (state.profile.name || state.plan?.metadata?.user_name || 'Guest')
+    .replace(/[^a-z0-9_-]+/gi, '_')
+    .replace(/^_+|_+$/g, '') || 'Guest';
+
+  const { default: html2pdf } = await import('html2pdf.js');
+  html2pdf()
+    .set({
+      margin: 0.45,
+      filename: `Indie_Dietyy_Plan_${safeName}.pdf`,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2, useCORS: true, backgroundColor: '#050812' },
+      jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' },
+      pagebreak: { mode: ['css', 'legacy'] },
+    })
+    .from(element)
+    .save();
+}
+
+function bindHeroTilt() {
+  const device = document.getElementById('hero-device');
+  if (!device || window.matchMedia('(pointer: coarse)').matches) return;
+
+  device.addEventListener('pointermove', (event) => {
+    const rect = device.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
+    const nx = x / rect.width - 0.5;
+    const ny = y / rect.height - 0.5;
+    device.style.setProperty('--rx', `${(-ny * 9).toFixed(2)}deg`);
+    device.style.setProperty('--ry', `${(nx * 12).toFixed(2)}deg`);
+    device.style.setProperty('--mx', `${x}px`);
+    device.style.setProperty('--my', `${y}px`);
+  });
+
+  device.addEventListener('pointerleave', () => {
+    device.style.setProperty('--rx', '0deg');
+    device.style.setProperty('--ry', '0deg');
+    device.style.setProperty('--mx', '50%');
+    device.style.setProperty('--my', '30%');
+  });
+}
+
+await loadTranslations();
+render();

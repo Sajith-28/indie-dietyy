@@ -1,0 +1,233 @@
+{
+  "fixed_at": "2026-05-05T16:07:38.645413",
+  "total_corrections": 15694,
+  "macro_fixed": 226,
+  "allergen_fixed": 15468,
+  "numeric_fixed": 0,
+  "state_details": [
+    {
+      "state": "Andhra Pradesh",
+      "macro_fixed": 0,
+      "allergen_fixed": 442,
+      "numeric_fixed": 0,
+      "fiber_fixed": 0,
+      "protein_fixed": 0
+    },
+    {
+      "state": "Arunachal Pradesh",
+      "macro_fixed": 66,
+      "allergen_fixed": 370,
+      "numeric_fixed": 0,
+      "fiber_fixed": 0,
+      "protein_fixed": 0
+    },
+    {
+      "state": "Assam",
+      "macro_fixed": 0,
+      "allergen_fixed": 419,
+      "numeric_fixed": 0,
+      "fiber_fixed": 0,
+      "protein_fixed": 0
+    },
+    {
+      "state": "Bihar",
+      "macro_fixed": 4,
+      "allergen_fixed": 422,
+      "numeric_fixed": 0,
+      "fiber_fixed": 0,
+      "protein_fixed": 0
+    },
+    {
+      "state": "Chhattisgarh",
+      "macro_fixed": 0,
+      "allergen_fixed": 634,
+      "numeric_fixed": 0,
+      "fiber_fixed": 0,
+      "protein_fixed": 0
+    },
+    {
+      "state": "Goa",
+      "macro_fixed": 0,
+      "allergen_fixed": 759,
+      "numeric_fixed": 0,
+      "fiber_fixed": 0,
+      "protein_fixed": 0
+    },
+    {
+      "state": "Gujarat",
+      "macro_fixed": 0,
+      "allergen_fixed": 116,
+      "numeric_fixed": 0,
+      "fiber_fixed": 0,
+      "protein_fixed": 0
+    },
+    {
+      "state": "Haryana",
+      "macro_fixed": 0,
+      "allergen_fixed": 679,
+      "numeric_fixed": 0,
+      "fiber_fixed": 0,
+      "protein_fixed": 0
+    },
+    {
+      "state": "Himachal Pradesh",
+      "macro_fixed": 0,
+      "allergen_fixed": 1011,
+      "numeric_fixed": 0,
+      "fiber_fixed": 0,
+      "protein_fixed": 0
+    },
+    {
+      "state": "Jharkhand",
+      "macro_fixed": 6,
+      "allergen_fixed": 134,
+      "numeric_fixed": 0,
+      "fiber_fixed": 0,
+      "protein_fixed": 0
+    },
+    {
+      "state": "Karnataka",
+      "macro_fixed": 4,
+      "allergen_fixed": 421,
+      "numeric_fixed": 0,
+      "fiber_fixed": 0,
+      "protein_fixed": 0
+    },
+    {
+      "state": "Kerala",
+      "macro_fixed": 0,
+      "allergen_fixed": 714,
+      "numeric_fixed": 0,
+      "fiber_fixed": 0,
+      "protein_fixed": 0
+    },
+    {
+      "state": "Madhya Pradesh",
+      "macro_fixed": 0,
+      "allergen_fixed": 388,
+      "numeric_fixed": 0,
+      "fiber_fixed": 0,
+      "protein_fixed": 0
+    },
+    {
+      "state": "Maharashtra",
+      "macro_fixed": 0,
+      "allergen_fixed": 462,
+      "numeric_fixed": 0,
+      "fiber_fixed": 0,
+      "protein_fixed": 0
+    },
+    {
+      "state": "Manipur",
+      "macro_fixed": 0,
+      "allergen_fixed": 497,
+      "numeric_fixed": 0,
+      "fiber_fixed": 0,
+      "protein_fixed": 0
+    },
+    {
+      "state": "Meghalaya",
+      "macro_fixed": 112,
+      "allergen_fixed": 896,
+      "numeric_fixed": 0,
+      "fiber_fixed": 0,
+      "protein_fixed": 0
+    },
+    {
+      "state": "Mizoram",
+      "macro_fixed": 0,
+      "allergen_fixed": 795,
+      "numeric_fixed": 0,
+      "fiber_fixed": 0,
+      "protein_fixed": 0
+    },
+    {
+      "state": "Nagaland",
+      "macro_fixed": 20,
+      "allergen_fixed": 719,
+      "numeric_fixed": 0,
+      "fiber_fixed": 0,
+      "protein_fixed": 0
+    },
+    {
+      "state": "Odisha",
+      "macro_fixed": 0,
+      "allergen_fixed": 944,
+      "numeric_fixed": 0,
+      "fiber_fixed": 0,
+      "protein_fixed": 0
+    },
+    {
+      "state": "Punjab",
+      "macro_fixed": 0,
+      "allergen_fixed": 605,
+      "numeric_fixed": 0,
+      "fiber_fixed": 0,
+      "protein_fixed": 0
+    },
+    {
+      "state": "Rajasthan",
+      "macro_fixed": 0,
+      "allergen_fixed": 365,
+      "numeric_fixed": 0,
+      "fiber_fixed": 0,
+      "protein_fixed": 0
+    },
+    {
+      "state": "Sikkim",
+      "macro_fixed": 12,
+      "allergen_fixed": 380,
+      "numeric_fixed": 0,
+      "fiber_fixed": 0,
+      "protein_fixed": 0
+    },
+    {
+      "state": "Tamil Nadu",
+      "macro_fixed": 0,
+      "allergen_fixed": 298,
+      "numeric_fixed": 0,
+      "fiber_fixed": 0,
+      "protein_fixed": 0
+    },
+    {
+      "state": "Telangana",
+      "macro_fixed": 0,
+      "allergen_fixed": 729,
+      "numeric_fixed": 0,
+      "fiber_fixed": 0,
+      "protein_fixed": 0
+    },
+    {
+      "state": "Tripura",
+      "macro_fixed": 2,
+      "allergen_fixed": 815,
+      "numeric_fixed": 0,
+      "fiber_fixed": 0,
+      "protein_fixed": 0
+    },
+    {
+      "state": "Uttar Pradesh",
+      "macro_fixed": 0,
+      "allergen_fixed": 462,
+      "numeric_fixed": 0,
+      "fiber_fixed": 0,
+      "protein_fixed": 0
+    },
+    {
+      "state": "Uttarakhand",
+      "macro_fixed": 0,
+      "allergen_fixed": 643,
+      "numeric_fixed": 0,
+      "fiber_fixed": 0,
+      "protein_fixed": 0
+    },
+    {
+      "state": "West Bengal",
+      "macro_fixed": 0,
+      "allergen_fixed": 349,
+      "numeric_fixed": 0,
+      "fiber_fixed": 0,
+      "protein_fixed": 0
+    }
+  ]
+}

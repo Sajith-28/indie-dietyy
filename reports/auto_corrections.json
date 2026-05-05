@@ -1,0 +1,42 @@
+[
+  {
+    "state": "Arunachal Pradesh",
+    "action": "recalculate_calories",
+    "count": 33
+  },
+  {
+    "state": "Bihar",
+    "action": "recalculate_calories",
+    "count": 2
+  },
+  {
+    "state": "Jharkhand",
+    "action": "recalculate_calories",
+    "count": 3
+  },
+  {
+    "state": "Karnataka",
+    "action": "recalculate_calories",
+    "count": 2
+  },
+  {
+    "state": "Meghalaya",
+    "action": "recalculate_calories",
+    "count": 56
+  },
+  {
+    "state": "Nagaland",
+    "action": "recalculate_calories",
+    "count": 10
+  },
+  {
+    "state": "Sikkim",
+    "action": "recalculate_calories",
+    "count": 6
+  },
+  {
+    "state": "Tripura",
+    "action": "recalculate_calories",
+    "count": 1
+  }
+]
