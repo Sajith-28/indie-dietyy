@@ -292,7 +292,7 @@ function renderHeader() {
   return `
     <header class="app-header">
       <div class="brand-lockup">
-        <div class="brand-mark" aria-hidden="true">${icon('pulse')}</div>
+        <img class="brand-mark" src="/logo.png" alt="Indie Dietyy Logo" aria-hidden="true" style="padding: 0; object-fit: cover; border: 1px solid rgba(255,255,255,0.1);" />
         <div>
           <h1 class="brand-title">${esc(t('title'))}</h1>
           <p class="brand-subtitle">${esc(t('subtitle'))}</p>
