@@ -1,6 +1,9 @@
 from contextlib import asynccontextmanager
+from pathlib import Path
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 from typing import List, Optional
 import datetime
@@ -50,6 +53,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Serve built frontend if present (single-container deployment)
+dist_path = Path("frontend/dist")
+if not dist_path.exists():
+    print("[Warning] Frontend static build not found at frontend/dist — serve frontend separately or build before containerizing.")
+
 # Request Model
 class UserProfile(BaseModel):
     user_id: Optional[str] = Field(default=None, description="Optional ID for logged in users")
@@ -77,7 +85,8 @@ class UserProfile(BaseModel):
     
     allergies: str = Field(default="", description="Free text allergies")
 
-@app.get("/")
+# Basic root when frontend not present
+@app.get("/api/root")
 async def root():
     return {"message": "Indie Dietyy ML Inference Server is online."}
 
@@ -149,6 +158,39 @@ async def generate_plan(profile: UserProfile):
     except Exception as e:
         print(f"Inference Error: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to generate plan: {str(e)}")
+
+# If frontend build is present, register SPA routes after API routes so /api/* wins
+if dist_path.exists():
+    # Mount the assets folder explicitly so JS/CSS are served with correct MIME types
+    assets_dir = dist_path / "assets"
+    if assets_dir.exists():
+        app.mount("/assets", StaticFiles(directory=str(assets_dir)), name="assets")
+
+    # Serve other top-level files directly
+    favicon = dist_path / "favicon.svg"
+    icons = dist_path / "icons.svg"
+    index_file = dist_path / "index.html"
+
+    if favicon.exists():
+        @app.get("/favicon.svg")
+        async def favicon_route():
+            return FileResponse(favicon)
+
+    if icons.exists():
+        @app.get("/icons.svg")
+        async def icons_route():
+            return FileResponse(icons)
+
+    # Serve index.html for root and any non-/api paths (SPA)
+    @app.get("/")
+    async def root_frontend():
+        return FileResponse(index_file)
+
+    @app.get("/{full_path:path}")
+    async def spa_catchall(full_path: str):
+        if full_path.startswith("api"):
+            raise HTTPException(status_code=404, detail="Not Found")
+        return FileResponse(index_file)
 
 if __name__ == "__main__":
     import uvicorn
