@@ -1,5 +1,5 @@
 pandas
-fastparquet
+pyarrow
 scikit-learn
 lightgbm
 deep-translator
