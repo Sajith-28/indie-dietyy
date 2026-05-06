@@ -5,18 +5,8 @@
   "outputDirectory": "frontend/dist",
   "rewrites": [
     {
-      "source": "/api/(.*)",
-      "destination": "/api/index.py"
-    },
-    {
       "source": "/(.*)",
       "destination": "/"
     }
-  ],
-  "functions": {
-    "api/**/*.py": {
-      "runtime": "@vercel/python@4.1.0",
-      "maxDuration": 15
-    }
-  }
+  ]
 }
