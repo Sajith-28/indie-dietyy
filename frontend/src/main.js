@@ -286,6 +286,65 @@ function render() {
   `;
   bindEvents();
   bindHeroTilt();
+  bindCinematicVideo();
+}
+
+let cinematicVideoAnimationId = null;
+
+function bindCinematicVideo() {
+  const video = document.getElementById('landing-video');
+  if (!video) {
+    if (cinematicVideoAnimationId) {
+      cancelAnimationFrame(cinematicVideoAnimationId);
+      cinematicVideoAnimationId = null;
+    }
+    return;
+  }
+
+  // Preload & wait for metadata
+  if (video.readyState >= 1) {
+    setupScrubbing(video);
+  } else {
+    video.addEventListener('loadedmetadata', () => setupScrubbing(video), { once: true });
+  }
+}
+
+let globalScrubHandlersAttached = false;
+let targetVideoTime = 0;
+
+function setupScrubbing(video) {
+  const updateVideoTime = () => {
+    const v = document.getElementById('landing-video');
+    if (!v || !v.duration) return;
+    
+    // Smooth interpolation (lerping) for buttery scrubbing
+    v.currentTime += (targetVideoTime - v.currentTime) * 0.15;
+    cinematicVideoAnimationId = requestAnimationFrame(updateVideoTime);
+  };
+  
+  if (cinematicVideoAnimationId) cancelAnimationFrame(cinematicVideoAnimationId);
+  cinematicVideoAnimationId = requestAnimationFrame(updateVideoTime);
+
+  if (!globalScrubHandlersAttached) {
+    globalScrubHandlersAttached = true;
+    
+    window.addEventListener('mousemove', (e) => {
+      const v = document.getElementById('landing-video');
+      if (!v || window.innerWidth <= 768) return;
+      const progress = e.clientX / window.innerWidth;
+      targetVideoTime = Math.max(0, Math.min(1, progress)) * v.duration;
+    }, { passive: true });
+
+    window.addEventListener('scroll', () => {
+      const v = document.getElementById('landing-video');
+      if (!v || window.innerWidth > 768) return;
+      const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+      if (maxScroll <= 0) return;
+      
+      const progress = window.scrollY / maxScroll;
+      targetVideoTime = Math.max(0, Math.min(1, progress)) * v.duration;
+    }, { passive: true });
+  }
 }
 
 function renderHeader() {
@@ -323,52 +382,29 @@ function renderPage() {
 
 function renderLanding() {
   return `
-    <main class="view hero-grid">
-      <section>
-        <span class="hero-kicker">${icon('spark')} ${esc(t('appBadge'))}</span>
-        <h2 class="hero-title"><span class="shiny">${esc(t('title'))}</span></h2>
-        <p class="hero-copy">${esc(t('landingCopy'))}</p>
-        <div class="hero-actions">
-          <button class="btn btn-primary" type="button" data-action="start">${icon('next')} ${esc(t('startProfile'))}</button>
-          ${state.plan ? `<button class="btn btn-secondary" id="view-last-plan-btn" type="button" data-action="result">${icon('utensils')} ${esc(t('viewLastPlan'))}</button>` : ''}
-        </div>
-        <div class="hero-stats" aria-label="Product highlights">
-          <div class="micro-stat"><strong>7</strong><span>${esc(t('day'))} plan engine</span></div>
-          <div class="micro-stat"><strong>${esc(bmiValue())}</strong><span>${esc(t('calculatedBmi'))}</span></div>
-          <div class="micro-stat"><strong>28</strong><span>Indian language options</span></div>
-        </div>
-      </section>
-      <section class="hero-visual" aria-label="Animated diet planning dashboard preview">
-        <div class="clinical-orbit" aria-hidden="true"></div>
-        <div class="float-badge one">${icon('heart')}<div><strong>Clinical Safety</strong><br><span class="brand-subtitle">Markers-aware meals</span></div></div>
-        <div class="float-badge two">${icon('utensils')}<div><strong>Regional Meals</strong><br><span class="brand-subtitle">Indian diet patterns</span></div></div>
-        <div class="device-card" id="hero-device">
-          <div class="device-screen">
-            <div class="screen-top">
-              <div class="screen-logo"><span class="pulse-dot"></span>${esc(t('title'))}</div>
-              <span class="badge">${esc(t('aiScore'))} 96</span>
+    <main class="view cinematic-landing" id="cinematic-landing">
+      <div class="video-container" id="video-container">
+        <video id="landing-video" class="cinematic-video" preload="metadata" muted playsinline>
+          <source media="(max-width: 768px)" src="/Animation/Mobile.mp4" type="video/mp4">
+          <source src="/Animation/desktop.mp4" type="video/mp4">
+        </video>
+        <div class="landing-overlay">
+          <div class="hero-content">
+            <span class="hero-kicker">${icon('spark')} ${esc(t('appBadge'))}</span>
+            <h2 class="hero-title"><span class="shiny">${esc(t('title'))}</span></h2>
+            <p class="hero-copy">${esc(t('landingCopy'))}</p>
+            <div class="hero-actions">
+              <button class="btn btn-primary" type="button" data-action="start">${icon('next')} ${esc(t('startProfile'))}</button>
+              ${state.plan ? `<button class="btn btn-secondary" id="view-last-plan-btn" type="button" data-action="result">${icon('utensils')} ${esc(t('viewLastPlan'))}</button>` : ''}
             </div>
-            <div class="screen-chart" aria-hidden="true"></div>
-            <div class="mock-grid">
-              <div class="mock-card">
-                <div class="mock-label">${esc(t('bmi'))}</div>
-                <div class="mock-value">${esc(bmiValue())}</div>
-                <div class="mock-bar"><span style="width: 68%"></span></div>
-              </div>
-              <div class="mock-card">
-                <div class="mock-label">${esc(t('protein'))}</div>
-                <div class="mock-value">82g</div>
-                <div class="mock-bar"><span style="width: 74%"></span></div>
-              </div>
-              <div class="mock-card wide">
-                <div class="mock-label">${esc(t('planReady'))}</div>
-                <div class="mock-value">Kerala balanced protocol</div>
-                <div class="mock-bar"><span style="width: 91%"></span></div>
-              </div>
+            <div class="interaction-hint">
+              <span class="hint-desktop">${icon('pulse')} Move cursor to explore</span>
+              <span class="hint-mobile">${icon('pulse')} Scroll down to explore</span>
             </div>
           </div>
         </div>
-      </section>
+      </div>
+      <div class="scroll-space" aria-hidden="true"></div>
     </main>
   `;
 }

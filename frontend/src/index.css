@@ -1203,3 +1203,99 @@ select option {
     transition-duration: 0.001ms !important;
   }
 }
+/* ========================================= */
+/* CINEMATIC LANDING ANIMATION */
+/* ========================================= */
+
+.cinematic-landing {
+  position: relative;
+}
+
+/* Force 300vh on mobile to allow scroll scrubbing */
+@media (max-width: 768px) {
+  .cinematic-landing {
+    min-height: 300vh;
+  }
+}
+
+/* Fixed container so the video stays in place while scrolling */
+.video-container {
+  position: sticky;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  background: var(--bg-deep);
+  z-index: 10;
+  /* Shift left to counteract the padding from app-frame if necessary */
+  margin-left: calc(-50vw + 50%);
+}
+
+.cinematic-video {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center center;
+  /* SCALE UP to crop out edges / AI watermarks */
+  transform: scale(1.15);
+  pointer-events: none;
+}
+
+.landing-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* Dark gradient to ensure text readability over the video */
+  background: linear-gradient(to top, rgba(2, 4, 10, 0.8) 0%, transparent 40%, rgba(2, 4, 10, 0.4) 100%);
+  pointer-events: none;
+}
+
+.hero-content {
+  pointer-events: auto;
+  text-align: center;
+  max-width: 720px;
+  padding: 0 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  /* Add subtle float animation */
+  animation: viewEnter 800ms ease-out both;
+}
+
+.interaction-hint {
+  margin-top: 30px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--accent-2);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  opacity: 0.8;
+  animation: pulseDot 2s infinite alternate;
+}
+
+.hint-desktop {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.hint-mobile {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .hint-desktop { display: none; }
+  .hint-mobile { display: flex; align-items: center; gap: 8px; }
+  .cinematic-video {
+    /* Slightly less scale on mobile if 9:16 already crops heavily, but 1.15 hides bottom watermark */
+    transform: scale(1.15); 
+  }
+}
