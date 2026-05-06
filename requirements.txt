@@ -1,5 +1,5 @@
 pandas
-pyarrow
+fastparquet
 scikit-learn
 lightgbm
 deep-translator
@@ -10,3 +10,4 @@ numpy
 motor
 pymongo
 python-dotenv
+gunicorn
