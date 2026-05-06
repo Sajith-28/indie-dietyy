@@ -337,8 +337,11 @@ function setupScrubbing(video) {
 
     window.addEventListener('scroll', () => {
       const v = document.getElementById('landing-video');
-      if (!v || window.innerWidth > 768) return;
-      const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+      const container = document.getElementById('cinematic-landing');
+      if (!v || !container || window.innerWidth > 768) return;
+      
+      // Calculate scroll progress relative to the cinematic section only
+      const maxScroll = container.offsetHeight - window.innerHeight;
       if (maxScroll <= 0) return;
       
       const progress = window.scrollY / maxScroll;
@@ -382,30 +385,65 @@ function renderPage() {
 
 function renderLanding() {
   return `
-    <main class="view cinematic-landing" id="cinematic-landing">
-      <div class="video-container" id="video-container">
-        <video id="landing-video" class="cinematic-video" preload="metadata" muted playsinline>
-          <source media="(max-width: 768px)" src="/Animation/Mobile.mp4" type="video/mp4">
-          <source src="/Animation/desktop.mp4" type="video/mp4">
-        </video>
-        <div class="landing-overlay">
-          <div class="hero-content">
-            <span class="hero-kicker">${icon('spark')} ${esc(t('appBadge'))}</span>
-            <h2 class="hero-title"><span class="shiny">${esc(t('title'))}</span></h2>
-            <p class="hero-copy">${esc(t('landingCopy'))}</p>
-            <div class="hero-actions">
-              <button class="btn btn-primary" type="button" data-action="start">${icon('next')} ${esc(t('startProfile'))}</button>
-              ${state.plan ? `<button class="btn btn-secondary" id="view-last-plan-btn" type="button" data-action="result">${icon('utensils')} ${esc(t('viewLastPlan'))}</button>` : ''}
-            </div>
-            <div class="interaction-hint">
-              <span class="hint-desktop">${icon('pulse')} Move cursor to explore</span>
-              <span class="hint-mobile">${icon('pulse')} Scroll down to explore</span>
+    <div class="landing-page-wrapper">
+      <main class="view cinematic-landing" id="cinematic-landing">
+        <div class="video-container" id="video-container">
+          <video id="landing-video" class="cinematic-video" preload="metadata" muted playsinline>
+            <source media="(max-width: 768px)" src="/Animation/Mobile.mp4" type="video/mp4">
+            <source src="/Animation/desktop.mp4" type="video/mp4">
+          </video>
+          <div class="landing-overlay">
+            <div class="hero-content">
+              <span class="hero-kicker">${icon('spark')} ${esc(t('appBadge'))}</span>
+              <h2 class="hero-title"><span class="shiny">${esc(t('title'))}</span></h2>
+              <p class="hero-copy">${esc(t('landingCopy'))}</p>
+              <div class="hero-actions">
+                <button class="btn btn-primary" type="button" data-action="start">${icon('next')} ${esc(t('startProfile'))}</button>
+                ${state.plan ? `<button class="btn btn-secondary" id="view-last-plan-btn" type="button" data-action="result">${icon('utensils')} ${esc(t('viewLastPlan'))}</button>` : ''}
+              </div>
+              <div class="interaction-hint">
+                <span class="hint-desktop">${icon('pulse')} Move cursor to explore</span>
+                <span class="hint-mobile">${icon('pulse')} Scroll down to explore</span>
+              </div>
             </div>
           </div>
         </div>
-      </div>
-      <div class="scroll-space" aria-hidden="true"></div>
-    </main>
+        <div class="scroll-space" aria-hidden="true"></div>
+      </main>
+      
+      <section class="about-section view">
+        <div class="about-container">
+          <div class="about-header">
+            <span class="section-kicker">${icon('spark')} The Engine</span>
+            <h2 class="about-title">Intelligent Clinical Nutrition</h2>
+            <p class="about-copy">
+              Indie Dietyy is a high-performance, clinical-grade AI diet planner engineered specifically for authentic regional Indian cuisine. 
+              It leverages advanced generative AI to create customized, medically safe nutrition protocols that respect cultural dietary patterns, addressing complex conditions like diabetes, hypertension, and cholesterol.
+            </p>
+          </div>
+          
+          <div class="developer-credits">
+            <h3 class="credits-title">Engineered By</h3>
+            <div class="dev-profiles">
+              <div class="dev-profile panel">
+                <div class="dev-avatar">${icon('user')}</div>
+                <div class="dev-info">
+                  <h4>Sajith Ahamed</h4>
+                  <span>Lead AI & Full Stack Developer</span>
+                </div>
+              </div>
+              <div class="dev-profile panel">
+                <div class="dev-avatar">${icon('user')}</div>
+                <div class="dev-info">
+                  <h4>Kanagavel</h4>
+                  <span>Core Developer</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
   `;
 }
 

@@ -1299,3 +1299,107 @@ select option {
     transform: scale(1.15); 
   }
 }
+
+/* ========================================= */
+/* ABOUT SECTION & DEVELOPER CREDITS */
+/* ========================================= */
+
+.landing-page-wrapper {
+  display: flex;
+  flex-direction: column;
+}
+
+.about-section {
+  position: relative;
+  z-index: 30;
+  background: var(--bg);
+  padding: 80px 20px;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.about-container {
+  max-width: 900px;
+  width: 100%;
+  display: grid;
+  gap: 60px;
+}
+
+.about-header {
+  text-align: center;
+  max-width: 760px;
+  margin: 0 auto;
+}
+
+.about-title {
+  margin: 16px 0 24px;
+  font-size: clamp(2.2rem, 5vw, 3.5rem);
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  background: linear-gradient(to right, #fff, #a7e9ff);
+  -webkit-background-clip: text;
+  color: transparent;
+}
+
+.about-copy {
+  font-size: clamp(1.05rem, 2vw, 1.25rem);
+  line-height: 1.7;
+  color: #aebfd4;
+  margin: 0;
+}
+
+.credits-title {
+  text-align: center;
+  font-size: 1.1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+  margin-bottom: 24px;
+}
+
+.dev-profiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+.dev-profile {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 24px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.dev-profile:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 40px rgba(56, 200, 255, 0.12);
+  border-color: rgba(56, 200, 255, 0.3);
+}
+
+.dev-avatar {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(56, 200, 255, 0.15), rgba(82, 240, 202, 0.15));
+  border: 1px solid rgba(82, 240, 202, 0.3);
+  display: grid;
+  place-items: center;
+  color: var(--accent-2);
+}
+
+.dev-info h4 {
+  margin: 0 0 6px;
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #fff;
+}
+
+.dev-info span {
+  font-size: 0.9rem;
+  color: var(--accent);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
