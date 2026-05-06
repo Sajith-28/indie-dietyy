@@ -14,7 +14,7 @@ import joblib
 import pandas as pd
 import numpy as np
 from pathlib import Path
-from deep_translator import GoogleTranslator
+from pathlib import Path
 
 # ─────────────────────────────────────────────────────────────────────────────
 # 1. SETUP & PATHS
@@ -90,7 +90,7 @@ class DietInferenceEngine:
         # Batch of new translations to save to MongoDB (flushed after each request)
         self._pending_saves: list[dict] = []
 
-        # Load Translation Caches
+        # Load Translation Caches (Precomputed)
         try:
             with open(LOCALE_DIR / "translations.json", "r", encoding="utf-8") as f:
                 self.ui_translations = json.load(f)
@@ -100,6 +100,21 @@ class DietInferenceEngine:
             self.ui_translations = {}
             self.food_translations = {}
 
+        # Merge new pipeline JSONs if they exist
+        for lang in ["ta", "hi", "te", "kn", "ml", "bn", "mr", "pa"]:
+            ui_path = Path(f"frontend/public/locales/ui_{lang}.json")
+            food_path = LOCALE_DIR / f"food_{lang}.json"
+            
+            if lang not in self.ui_translations: self.ui_translations[lang] = {}
+            if lang not in self.food_translations: self.food_translations[lang] = {}
+            
+            if ui_path.exists():
+                with open(ui_path, "r", encoding="utf-8") as f:
+                    self.ui_translations[lang].update(json.load(f))
+            if food_path.exists():
+                with open(food_path, "r", encoding="utf-8") as f:
+                    self.food_translations[lang].update(json.load(f))
+
         self.numeric_features = [
             "calories", "protein_g", "carbs_g", "fat_g", "fiber_g",
             "caloric_density", "protein_cal_ratio", "carb_cal_ratio", "fat_cal_ratio",
@@ -107,63 +122,30 @@ class DietInferenceEngine:
         ]
 
     def translate(self, text, target_lang):
-        """4-Layer Translation: Memory -> File Cache -> MongoDB -> Google API"""
+        """0ms Latency Translation: Pure Memory Dictionary Lookup"""
         if target_lang == "en" or not text:
             return text
 
+        text_str = str(text)
+
         # Layer 1: In-memory UI cache
-        if target_lang in self.ui_translations and text in self.ui_translations[target_lang]:
-            return self.ui_translations[target_lang][text]
+        if target_lang in self.ui_translations and text_str in self.ui_translations[target_lang]:
+            return self.ui_translations[target_lang][text_str]
 
         # Layer 2: In-memory food cache
-        if target_lang in self.food_translations and text in self.food_translations[target_lang]:
-            return self.food_translations[target_lang][text]
+        if target_lang in self.food_translations and text_str in self.food_translations[target_lang]:
+            return self.food_translations[target_lang][text_str]
 
-        # Layer 3: Google Translate API → save to memory + queue for MongoDB
-        try:
-            translated = GoogleTranslator(source='auto', target=target_lang).translate(text)
-            if translated:
-                if target_lang not in self.ui_translations:
-                    self.ui_translations[target_lang] = {}
-                self.ui_translations[target_lang][text] = translated
-
-                # Queue this new translation to be persisted to MongoDB
-                self._pending_saves.append({
-                    "food_name_en": text,
-                    "lang": target_lang,
-                    "value": translated,
-                })
-                return translated
-            return text
-        except Exception as e:
-            print(f"Translation API Error for '{text}': {e}")
-            return text
+        # Fallback to English if not pre-translated
+        return text_str
 
     async def flush_translation_cache(self, db):
-        """Persist any newly translated strings to the MongoDB translations collection."""
-        if not self._pending_saves or db is None:
-            return
-
-        batch = self._pending_saves.copy()
-        self._pending_saves.clear()
-
-        for item in batch:
-            lang_key = f"translations.{item['lang']}"
-            await db.translations.update_one(
-                {"food_name_en": item["food_name_en"]},
-                {"$set": {lang_key: {"value": item["value"], "source": "api", "verified": False}}},
-                upsert=True,
-            )
-        print(f"✅ Flushed {len(batch)} new translations to MongoDB.")
+        """DEPRECATED: No longer saving dynamic translations to MongoDB."""
+        pass
 
     def translate_to_english(self, text: str) -> str:
-        """Translates user input (like allergies) from any Indian language to English."""
-        if not text or len(text.strip()) == 0:
-            return ""
-        try:
-            return GoogleTranslator(source='auto', target='en').translate(text)
-        except:
-            return text
+        """Translates user input to English. Removed to prevent runtime latency."""
+        return text
 
     def calculate_bmi(self, weight_kg, height_cm):
         if not weight_kg or not height_cm: return 0

@@ -32,34 +32,17 @@ const DEFAULT_PROFILE = {
 };
 
 const LANGUAGES = {
-  en: 'English',
-  hi: 'Hindi',
-  bn: 'Bengali',
-  te: 'Telugu',
-  mr: 'Marathi',
-  ta: 'Tamil',
-  ur: 'Urdu',
-  gu: 'Gujarati',
-  kn: 'Kannada',
-  ml: 'Malayalam',
-  pa: 'Punjabi',
-  as: 'Assamese',
-  or: 'Odia',
-  sa: 'Sanskrit',
-  sd: 'Sindhi',
-  ne: 'Nepali',
-  bho: 'Bhojpuri',
-  mai: 'Maithili',
-  gom: 'Konkani',
-  mni: 'Meiteilon',
-  doi: 'Dogri',
-  sat: 'Santali',
-  lus: 'Mizo',
-  kok: 'Kokborok',
-  kha: 'Khasi',
-  gar: 'Garo',
-  awa: 'Awadhi',
-  mag: 'Magahi',
+  en: 'English (English)',
+  hi: 'Hindi (हिन्दी)',
+  bn: 'Bengali (বাংলা)',
+  te: 'Telugu (తెలుగు)',
+  mr: 'Marathi (मराठी)',
+  ta: 'Tamil (தமிழ்)',
+  gu: 'Gujarati (ગુજરાતી)',
+  kn: 'Kannada (ಕನ್ನಡ)',
+  ml: 'Malayalam (മലയാളം)',
+  pa: 'Punjabi (ਪੰਜਾਬੀ)',
+  or: 'Odia (ଓଡ଼ିଆ)',
 };
 
 const STATES = [
@@ -875,7 +858,7 @@ async function loadTranslations() {
     return;
   }
 
-  const cacheKey = `ui_cache_vanilla_${state.language}`;
+  const cacheKey = `ui_cache_vanilla_v2_${state.language}`;
   try {
     const cached = localStorage.getItem(cacheKey);
     if (cached) {
@@ -891,20 +874,17 @@ async function loadTranslations() {
   render();
 
   try {
-    const entries = Object.entries(TEXT);
-    const response = await fetch(`${API_URL}/api/translate`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        texts: entries.map(([, value]) => value),
-        target_lang: state.language,
-      }),
-    });
+    const response = await fetch(`/locales/ui_${state.language}.json`);
+    if (!response.ok) throw new Error('Static UI translations not found');
     const data = await response.json();
-    if (!response.ok) throw new Error(data?.detail || 'Translation failed');
-    state.dynamicText = Object.fromEntries(entries.map(([key, value]) => [key, data[value] || value]));
+    
+    const entries = Object.entries(TEXT);
+    state.dynamicText = Object.fromEntries(
+      entries.map(([key, value]) => [key, data[value] || value])
+    );
     localStorage.setItem(cacheKey, JSON.stringify(state.dynamicText));
-  } catch {
+  } catch (err) {
+    console.error(err);
     state.dynamicText = {};
   } finally {
     state.isTranslating = false;
