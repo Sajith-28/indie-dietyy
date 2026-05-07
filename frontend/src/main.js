@@ -281,6 +281,10 @@ function transitionTo(page, step = state.step) {
     state.direction = nextIndex >= currentIndex ? 'forward' : 'backward';
   }
 
+  if (state.page === 'generating' && page !== 'generating') {
+    cursorController.sync('native_macos_cursor');
+  }
+
   const currentView = document.querySelector('.view-wrapper');
   if (currentView) {
     currentView.classList.add(`exit-${state.direction}`);
@@ -325,7 +329,7 @@ function render() {
   bindEvents();
   bindHeroTilt();
   bindCinematicVideo();
-  bindFuturisticCursor();
+  cursorController.sync(state.page === 'generating' ? 'loading_scope_cursor' : 'native_macos_cursor');
   
   if (state.page === 'generating') {
     bindMiniGame();
@@ -1241,80 +1245,215 @@ function bindMiniGameLegacy() {
   miniGameLoopId = requestAnimationFrame(spawnFat);
 }
 
-let futuristicCursorBound = false;
-let lastPointer = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
+const cursorController = (() => {
+  const interactiveSelector = [
+    'button',
+    'a',
+    'input',
+    'select',
+    'textarea',
+    'label',
+    '[role="button"]',
+    '[data-action]',
+    '.chip',
+    '.checkbox-card',
+    '.panel',
+    '.day-card',
+    '.dev-profile',
+    '.fat-enemy',
+  ].join(',');
 
-function bindFuturisticCursor() {
-  const hasFinePointer = window.matchMedia('(pointer: fine)').matches;
-  document.body.classList.toggle('has-custom-cursor', hasFinePointer);
+  const pointer = {
+    x: window.innerWidth / 2,
+    y: window.innerHeight / 2,
+    renderedX: window.innerWidth / 2,
+    renderedY: window.innerHeight / 2,
+    magneticX: 0,
+    magneticY: 0,
+  };
 
-  if (!hasFinePointer) {
-    document.getElementById('futuristic-cursor')?.remove();
-    return;
-  }
+  let mode = null;
+  let node = null;
+  let rafId = null;
+  let bound = false;
+  let isInteractive = false;
+  let isVisible = false;
 
-  let cursor = document.getElementById('futuristic-cursor');
-  if (!cursor) {
-    cursor = document.createElement('div');
-    cursor.id = 'futuristic-cursor';
-    cursor.className = 'futuristic-cursor';
-    cursor.innerHTML = '<span class="cursor-sight"></span><span class="cursor-barrel"></span>';
-    document.body.appendChild(cursor);
-  }
+  const canUseCustomCursor = () => window.matchMedia('(pointer: fine)').matches;
 
-  cursor.style.setProperty('--cursor-x', `${lastPointer.x}px`);
-  cursor.style.setProperty('--cursor-y', `${lastPointer.y}px`);
+  const template = (nextMode) => nextMode === 'loading_scope_cursor'
+    ? '<span class="scope-ring"></span><span class="scope-cross scope-cross-x"></span><span class="scope-cross scope-cross-y"></span><span class="scope-dot"></span><span class="scope-orbit"></span>'
+    : '<span class="macos-arrow"></span>';
 
-  if (futuristicCursorBound) return;
-  futuristicCursorBound = true;
+  const cleanupScopeEffects = () => {
+    document.querySelectorAll('.scope-shot-trail, .scope-shot-ping').forEach((effect) => effect.remove());
+  };
 
-  window.addEventListener('pointermove', (event) => {
-    if (event.pointerType === 'touch') return;
-    lastPointer = { x: event.clientX, y: event.clientY };
-    const activeCursor = document.getElementById('futuristic-cursor');
-    if (!activeCursor) return;
-    activeCursor.style.setProperty('--cursor-x', `${event.clientX}px`);
-    activeCursor.style.setProperty('--cursor-y', `${event.clientY}px`);
-  }, { passive: true });
+  const ensureNode = () => {
+    if (node && node.isConnected) return node;
+    node = document.createElement('div');
+    node.id = 'global-cursor';
+    node.className = 'global-cursor';
+    node.setAttribute('aria-hidden', 'true');
+    document.body.appendChild(node);
+    return node;
+  };
 
-  window.addEventListener('pointerdown', (event) => {
-    if (event.pointerType === 'touch') return;
-    const activeCursor = document.getElementById('futuristic-cursor');
-    if (!activeCursor) return;
-    activeCursor.classList.remove('is-firing');
-    activeCursor.getBoundingClientRect();
-    activeCursor.classList.add('is-firing');
-  }, { passive: true });
-}
+  const setModeClass = (nextMode) => {
+    document.body.classList.remove('cursor-mode-loading_scope_cursor', 'cursor-mode-native_macos_cursor');
+    document.body.classList.add(`cursor-mode-${nextMode}`);
+  };
 
-function createShotEffect(x, y, options = {}) {
+  const setInteractive = (value) => {
+    isInteractive = value;
+    if (node) node.classList.toggle('is-interactive', value);
+  };
+
+  const animate = () => {
+    if (!node || !isVisible) {
+      rafId = null;
+      return;
+    }
+
+    const lag = mode === 'loading_scope_cursor' ? 0.22 : 0.34;
+    const magneticEase = mode === 'native_macos_cursor' && isInteractive ? 0.16 : 0.26;
+    pointer.renderedX += (pointer.x + pointer.magneticX - pointer.renderedX) * lag;
+    pointer.renderedY += (pointer.y + pointer.magneticY - pointer.renderedY) * lag;
+    pointer.magneticX += (0 - pointer.magneticX) * magneticEase;
+    pointer.magneticY += (0 - pointer.magneticY) * magneticEase;
+    node.style.transform = `translate3d(${pointer.renderedX}px, ${pointer.renderedY}px, 0)`;
+    rafId = requestAnimationFrame(animate);
+  };
+
+  const startAnimation = () => {
+    if (!rafId) rafId = requestAnimationFrame(animate);
+  };
+
+  const destroyNode = () => {
+    if (rafId) cancelAnimationFrame(rafId);
+    rafId = null;
+    isVisible = false;
+    node?.remove();
+    node = null;
+    document.body.classList.remove('cursor-mode-loading_scope_cursor', 'cursor-mode-native_macos_cursor');
+    cleanupScopeEffects();
+  };
+
+  const bindGlobalEvents = () => {
+    if (bound) return;
+    bound = true;
+
+    window.addEventListener('pointermove', (event) => {
+      if (event.pointerType === 'touch') return;
+      pointer.x = event.clientX;
+      pointer.y = event.clientY;
+      isVisible = true;
+
+      const target = event.target instanceof Element ? event.target : null;
+      const interactive = Boolean(target?.closest(interactiveSelector));
+      setInteractive(interactive);
+
+      if (mode === 'native_macos_cursor' && interactive) {
+        const magnetTarget = target.closest(interactiveSelector);
+        const rect = magnetTarget?.getBoundingClientRect();
+        if (rect) {
+          pointer.magneticX = Math.max(-4, Math.min(4, (rect.left + rect.width / 2 - event.clientX) * 0.055));
+          pointer.magneticY = Math.max(-4, Math.min(4, (rect.top + rect.height / 2 - event.clientY) * 0.055));
+        }
+      }
+
+      startAnimation();
+    }, { passive: true });
+
+    window.addEventListener('pointerdown', (event) => {
+      if (event.pointerType === 'touch' || !node) return;
+      node.classList.remove('is-pressing');
+      node.getBoundingClientRect();
+      node.classList.add('is-pressing');
+    }, { passive: true });
+
+    window.addEventListener('pointerup', () => {
+      node?.classList.remove('is-pressing');
+    }, { passive: true });
+
+    document.addEventListener('pointerleave', () => {
+      if (node) node.classList.add('is-hidden');
+    });
+
+    document.addEventListener('pointerenter', () => {
+      if (node) node.classList.remove('is-hidden');
+    });
+
+    window.addEventListener('resize', () => {
+      pointer.x = Math.min(pointer.x, window.innerWidth);
+      pointer.y = Math.min(pointer.y, window.innerHeight);
+    }, { passive: true });
+  };
+
+  const sync = (nextMode) => {
+    const customCursorAllowed = canUseCustomCursor();
+    if (!customCursorAllowed) {
+      destroyNode();
+      mode = nextMode;
+      return;
+    }
+
+    bindGlobalEvents();
+
+    if (mode !== nextMode) {
+      if (mode === 'loading_scope_cursor' && nextMode !== 'loading_scope_cursor') {
+        cleanupScopeEffects();
+      }
+      mode = nextMode;
+      const cursorNode = ensureNode();
+      cursorNode.className = `global-cursor ${nextMode}`;
+      cursorNode.innerHTML = template(nextMode);
+      setModeClass(nextMode);
+      setInteractive(false);
+    } else {
+      ensureNode();
+      setModeClass(nextMode);
+    }
+
+    isVisible = true;
+    startAnimation();
+  };
+
+  const getPointer = () => ({ x: pointer.x, y: pointer.y, mode });
+
+  return { sync, getPointer };
+})();
+
+function createScopeShotEffect(x, y, options = {}) {
+  const { mode, x: pointerX, y: pointerY } = cursorController.getPointer();
+  if (mode !== 'loading_scope_cursor') return;
+
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const isTouch = options.pointerType === 'touch';
-  const originX = Number.isFinite(options.originX) ? options.originX : x;
-  const originY = Number.isFinite(options.originY) ? options.originY : y;
+  const originX = Number.isFinite(options.originX) ? options.originX : pointerX;
+  const originY = Number.isFinite(options.originY) ? options.originY : pointerY;
   const dx = x - originX;
   const dy = y - originY;
   const length = Math.max(18, Math.hypot(dx, dy));
   const angle = Math.atan2(dy, dx);
 
-  const muzzle = document.createElement('span');
-  muzzle.className = `shot-muzzle${isTouch ? ' touch-shot' : ''}`;
-  muzzle.style.left = `${x}px`;
-  muzzle.style.top = `${y}px`;
-  document.body.appendChild(muzzle);
+  const ping = document.createElement('span');
+  ping.className = 'scope-shot-ping';
+  ping.style.left = `${x}px`;
+  ping.style.top = `${y}px`;
+  document.body.appendChild(ping);
 
   if (!reduceMotion) {
-    const bullet = document.createElement('span');
-    bullet.className = 'shot-trail';
-    bullet.style.left = `${originX}px`;
-    bullet.style.top = `${originY}px`;
-    bullet.style.width = `${Math.min(length, window.innerWidth * 0.9)}px`;
-    bullet.style.transform = `rotate(${angle}rad)`;
-    document.body.appendChild(bullet);
-    window.setTimeout(() => bullet.remove(), 280);
+    const trail = document.createElement('span');
+    trail.className = 'scope-shot-trail';
+    trail.style.left = `${originX}px`;
+    trail.style.top = `${originY}px`;
+    trail.style.width = `${Math.min(length, window.innerWidth * 0.82)}px`;
+    trail.style.transform = `rotate(${angle}rad)`;
+    document.body.appendChild(trail);
+    window.setTimeout(() => trail.remove(), 240);
   }
 
-  window.setTimeout(() => muzzle.remove(), reduceMotion ? 120 : 360);
+  window.setTimeout(() => ping.remove(), reduceMotion ? 100 : 300);
 }
 
 function bindMiniGame() {
@@ -1330,10 +1469,11 @@ function bindMiniGame() {
 
   const fireFrom = (event) => {
     const isTouch = event.pointerType === 'touch';
-    createShotEffect(event.clientX, event.clientY, {
+    const pointer = cursorController.getPointer();
+    createScopeShotEffect(event.clientX, event.clientY, {
       pointerType: event.pointerType,
-      originX: isTouch ? window.innerWidth / 2 : lastPointer.x,
-      originY: isTouch ? window.innerHeight - 34 : lastPointer.y,
+      originX: isTouch ? window.innerWidth / 2 : pointer.x,
+      originY: isTouch ? window.innerHeight - 34 : pointer.y,
     });
   };
 
