@@ -348,7 +348,22 @@ function bindCinematicVideo() {
     return;
   }
 
-  // Preload & wait for metadata
+  const mobileVideo = '/Animation/Mobile.mp4';
+  const desktopVideo = '/Animation/desktop.mp4';
+  const preferredSrc = window.matchMedia('(max-width: 768px)').matches ? mobileVideo : desktopVideo;
+  if (!video.dataset.boundSrc || video.dataset.boundSrc !== preferredSrc) {
+    video.dataset.boundSrc = preferredSrc;
+    video.src = preferredSrc;
+    video.load();
+  }
+
+  video.muted = true;
+  video.playsInline = true;
+  video.setAttribute('playsinline', '');
+  video.setAttribute('webkit-playsinline', '');
+
+  unlockMobileVideo(video);
+
   if (video.readyState >= 1) {
     setupScrubbing(video);
   } else {
@@ -357,6 +372,29 @@ function bindCinematicVideo() {
 }
 
 let globalScrubHandlersAttached = false;
+let mobileVideoUnlockAttached = false;
+
+function unlockMobileVideo(video) {
+  if (mobileVideoUnlockAttached) return;
+  mobileVideoUnlockAttached = true;
+
+  const unlock = () => {
+    const activeVideo = document.getElementById('landing-video');
+    if (!activeVideo) return;
+    const playPromise = activeVideo.play();
+    if (playPromise && typeof playPromise.then === 'function') {
+      playPromise
+        .then(() => activeVideo.pause())
+        .catch(() => {
+          // Mobile browsers may still defer decode; scroll scrubbing will retry after metadata.
+        });
+    }
+  };
+
+  video.addEventListener('loadeddata', unlock, { once: true });
+  window.addEventListener('touchstart', unlock, { once: true, passive: true });
+  window.addEventListener('pointerdown', unlock, { once: true, passive: true });
+}
 
 // ─── VIRTUAL TIMELINE ENGINE ───────────────────────────────────
 // Architecture: Raw scroll → targetProgress → smoothProgress (spring) → committedTime (seek-coalesced)
@@ -374,7 +412,14 @@ const timeline = {
 };
 
 function setupScrubbing(video) {
+  if (video.dataset.scrubReady === 'true') return;
+  video.dataset.scrubReady = 'true';
   timeline.duration = video.duration;
+  timeline.target = 0;
+  timeline.smooth = 0;
+  timeline.velocity = 0;
+  timeline.committed = -1;
+  timeline.isSeeking = false;
   
   // Listen for decoder completion
   video.addEventListener('seeked', () => {
@@ -434,7 +479,7 @@ function setupScrubbing(video) {
       timeline.isSeeking = true;
       timeline.committed = idealTime;
       timeline.lastSeekTs = now;
-      v.currentTime = idealTime;
+      commitVideoTime(v, idealTime);
     }
     
     // ── Settling: when scrolling stops, gently converge to exact target ──
@@ -447,7 +492,7 @@ function setupScrubbing(video) {
       timeline.isSeeking = true;
       timeline.committed = idealTime;
       timeline.lastSeekTs = now;
-      v.currentTime = idealTime;
+      commitVideoTime(v, idealTime);
     }
     
     cinematicVideoAnimationId = requestAnimationFrame(tick);
@@ -498,6 +543,14 @@ function setupScrubbing(video) {
   }
 }
 
+function commitVideoTime(video, time) {
+  try {
+    video.currentTime = Math.max(0, Math.min(time, Math.max(0, video.duration - 0.01)));
+  } catch {
+    timeline.isSeeking = false;
+  }
+}
+
 function renderHeader() {
   return `
     <header class="app-header">
@@ -537,8 +590,6 @@ function renderLanding() {
       <main class="view cinematic-landing" id="cinematic-landing">
         <div class="video-container" id="video-container">
           <video id="landing-video" class="cinematic-video" preload="auto" muted playsinline>
-            <source media="(max-width: 768px)" src="/Animation/Mobile.mp4" type="video/mp4">
-            <source src="/Animation/desktop.mp4" type="video/mp4">
           </video>
           <div class="landing-overlay">
             <div class="hero-content">
