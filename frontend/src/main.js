@@ -164,6 +164,7 @@ let state = {
   isTranslating: false,
   isGenerating: false,
   error: '',
+  direction: 'forward', // Track navigation direction for cinematic transitions
 };
 
 if (state.page === 'result' && !state.plan) {
@@ -269,12 +270,23 @@ function currentStep() {
 }
 
 function transitionTo(page, step = state.step) {
-  const wipe = document.querySelector('.transition-wipe');
-  if (wipe) {
-    wipe.classList.remove('is-active');
-    void wipe.offsetWidth;
-    wipe.classList.add('is-active');
+  // Determine cinematic direction
+  const order = ['landing', 'wizard', 'generating', 'result'];
+  const currentIndex = order.indexOf(state.page);
+  const nextIndex = order.indexOf(page);
+  
+  if (page === 'wizard' && state.page === 'wizard') {
+    state.direction = step > state.step ? 'forward' : 'backward';
+  } else {
+    state.direction = nextIndex >= currentIndex ? 'forward' : 'backward';
   }
+
+  // Trigger cinematic exit animation on current view
+  const currentView = document.querySelector('.view-wrapper');
+  if (currentView) {
+    currentView.classList.add(`exit-${state.direction}`);
+  }
+
   window.setTimeout(() => {
     state.page = page;
     state.step = step;
@@ -282,22 +294,27 @@ function transitionTo(page, step = state.step) {
     persist();
     render();
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 260);
+  }, window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 300);
 }
 
 function render() {
   root.innerHTML = `
     <div class="app-shell">
-      <div class="transition-wipe" aria-hidden="true"></div>
       <div class="app-frame">
         ${renderHeader()}
-        ${renderPage()}
+        <div class="view-wrapper enter-${state.direction}">
+          ${renderPage()}
+        </div>
       </div>
     </div>
   `;
   bindEvents();
   bindHeroTilt();
   bindCinematicVideo();
+  
+  if (state.page === 'generating') {
+    bindMiniGame();
+  }
 }
 
 let cinematicVideoAnimationId = null;
@@ -741,7 +758,13 @@ function renderWizardActions() {
 function renderGenerating() {
   return `
     <main class="view loading-stage">
-      <section>
+      <div id="mini-game-container" class="mini-game-container">
+        <div class="game-ui">
+          <div class="game-title">Tap the Fats!</div>
+          <div class="game-score">Score: <span id="game-score">0</span></div>
+        </div>
+      </div>
+      <section class="loading-overlay">
         <div class="scanner" aria-hidden="true"><div class="scanner-core"></div></div>
         <span class="section-kicker">${icon('spark')} AI Clinical Engine</span>
         <h2 class="step-title">${esc(t('generating'))}</h2>
@@ -1125,6 +1148,82 @@ function bindHeroTilt() {
     device.style.setProperty('--mx', '50%');
     device.style.setProperty('--my', '30%');
   });
+}
+
+let miniGameLoopId = null;
+
+function bindMiniGame() {
+  const container = document.getElementById('mini-game-container');
+  if (!container) return;
+
+  let score = 0;
+  let fatSpawnRate = 1200; // start slow
+  let lastSpawn = 0;
+  const fats = ['🍔', '🍩', '🍕', '🥓', '🍟', '🌭', '🍗'];
+  const veggies = ['🥦', '🥕', '🥬', '🥑', '🥒', '🥗'];
+  
+  const scoreBoard = document.getElementById('game-score');
+
+  const spawnFat = (now) => {
+    if (state.page !== 'generating') {
+      if (miniGameLoopId) cancelAnimationFrame(miniGameLoopId);
+      return;
+    }
+    
+    if (now - lastSpawn > fatSpawnRate) {
+      lastSpawn = now;
+      fatSpawnRate = Math.max(300, fatSpawnRate - 60); // difficulty curve
+
+      const fat = document.createElement('div');
+      fat.className = 'fat-enemy';
+      fat.innerText = fats[Math.floor(Math.random() * fats.length)];
+      // Random X position between 10% and 90%
+      fat.style.left = Math.random() * 80 + 10 + '%';
+      // Random fall speed
+      fat.style.animationDuration = Math.random() * 2 + 2.5 + 's';
+      
+      fat.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        score++;
+        if (scoreBoard) scoreBoard.innerText = score;
+        
+        const rect = fat.getBoundingClientRect();
+        fat.remove();
+        
+        // Explosion of veggies
+        for (let i = 0; i < 4; i++) {
+          const veg = document.createElement('div');
+          veg.className = 'veggie-burst';
+          veg.innerText = veggies[Math.floor(Math.random() * veggies.length)];
+          veg.style.left = rect.left + 'px';
+          veg.style.top = rect.top + 'px';
+          // Random scatter velocities
+          veg.style.setProperty('--tx', (Math.random() * 160 - 80) + 'px');
+          veg.style.setProperty('--ty', (Math.random() * -120 - 40) + 'px');
+          document.body.appendChild(veg);
+          setTimeout(() => veg.remove(), 800);
+        }
+      });
+      
+      // Touch support
+      fat.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        fat.dispatchEvent(new Event('mousedown'));
+      }, { passive: false });
+      
+      container.appendChild(fat);
+      
+      // Cleanup if missed
+      setTimeout(() => {
+        if (fat.parentElement) fat.remove();
+      }, 5000);
+    }
+    
+    miniGameLoopId = requestAnimationFrame(spawnFat);
+  };
+  
+  if (miniGameLoopId) cancelAnimationFrame(miniGameLoopId);
+  miniGameLoopId = requestAnimationFrame(spawnFat);
 }
 
 await loadTranslations();

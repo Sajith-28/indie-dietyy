@@ -291,28 +291,51 @@ select option {
   }
 }
 
-.transition-wipe {
-  position: fixed;
-  inset: 0;
-  z-index: 100;
+/* ========================================= */
+/* CINEMATIC PAGE TRANSITIONS */
+/* ========================================= */
+
+.view-wrapper {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  perspective: 1200px;
+  transform-style: preserve-3d;
+}
+
+/* Forward: Moving deeper into the app */
+.view-wrapper.enter-forward .view {
+  animation: portalEnterForward 400ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.view-wrapper.exit-forward .view {
+  animation: portalExitForward 300ms cubic-bezier(0.5, 0, 0.8, 0.2) both;
   pointer-events: none;
-  opacity: 0;
-  background:
-    linear-gradient(90deg, transparent 0%, rgba(56,200,255,0.12) 38%, rgba(82,240,202,0.85) 50%, rgba(56,200,255,0.14) 62%, transparent 100%),
-    radial-gradient(circle at 50% 50%, rgba(56,200,255,0.16), transparent 52%);
-  transform: translateX(-115%) skewX(-12deg);
-  mix-blend-mode: screen;
 }
 
-.transition-wipe.is-active {
-  animation: scanWipe 760ms cubic-bezier(.7, 0, .2, 1) both;
+/* Backward: Pulling out of the app */
+.view-wrapper.enter-backward .view {
+  animation: portalEnterBackward 400ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.view-wrapper.exit-backward .view {
+  animation: portalExitBackward 300ms cubic-bezier(0.5, 0, 0.8, 0.2) both;
+  pointer-events: none;
 }
 
-@keyframes scanWipe {
-  0% { opacity: 0; transform: translateX(-115%) skewX(-12deg); }
-  18% { opacity: 1; }
-  78% { opacity: 1; }
-  100% { opacity: 0; transform: translateX(115%) skewX(-12deg); }
+@keyframes portalExitForward {
+  0% { transform: scale(1) translateZ(0); opacity: 1; filter: blur(0); }
+  100% { transform: scale(1.08) translateZ(80px); opacity: 0; filter: blur(8px); }
+}
+@keyframes portalEnterForward {
+  0% { transform: scale(0.92) translateZ(-80px); opacity: 0; filter: blur(8px); }
+  100% { transform: scale(1) translateZ(0); opacity: 1; filter: blur(0); }
+}
+@keyframes portalExitBackward {
+  0% { transform: scale(1) translateZ(0); opacity: 1; filter: blur(0); }
+  100% { transform: scale(0.92) translateZ(-80px); opacity: 0; filter: blur(8px); }
+}
+@keyframes portalEnterBackward {
+  0% { transform: scale(1.08) translateZ(80px); opacity: 0; filter: blur(8px); }
+  100% { transform: scale(1) translateZ(0); opacity: 1; filter: blur(0); }
 }
 
 .hero-grid {
@@ -1260,8 +1283,7 @@ select option {
   }
 
   .app-header,
-  .result-actions,
-  .transition-wipe {
+  .result-actions {
     display: none !important;
   }
 
@@ -1280,6 +1302,14 @@ select option {
     animation-iteration-count: 1 !important;
     scroll-behavior: auto !important;
     transition-duration: 0.001ms !important;
+  }
+  
+  .view-wrapper.enter-forward .view,
+  .view-wrapper.exit-forward .view,
+  .view-wrapper.enter-backward .view,
+  .view-wrapper.exit-backward .view {
+    filter: none !important;
+    animation: none !important;
   }
 }
 /* ========================================= */
@@ -1483,4 +1513,100 @@ select option {
   color: var(--accent);
   font-weight: 600;
   letter-spacing: 0.02em;
+}
+
+/* ========================================= */
+/* MINI GAME: VEGGIE VS FAT */
+/* ========================================= */
+
+.mini-game-container {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  overflow: hidden;
+  pointer-events: none; /* Let clicks pass through except on enemies */
+}
+
+.game-ui {
+  position: absolute;
+  top: 32px;
+  right: 32px;
+  text-align: right;
+  z-index: 10;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.game-title {
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 4px;
+}
+
+.game-score {
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: var(--accent-1);
+  text-shadow: 0 0 20px rgba(56, 200, 255, 0.4);
+  font-variant-numeric: tabular-nums;
+}
+
+.fat-enemy {
+  position: absolute;
+  top: -80px;
+  font-size: 3.5rem;
+  cursor: crosshair;
+  pointer-events: auto;
+  user-select: none;
+  animation: fatFall linear forwards;
+  will-change: transform, top;
+  filter: drop-shadow(0 4px 12px rgba(0,0,0,0.6));
+  transition: transform 0.1s cubic-bezier(0.3, 2, 0.5, 1);
+}
+
+.fat-enemy:hover {
+  transform: scale(1.2);
+}
+
+.fat-enemy:active {
+  transform: scale(0.8);
+}
+
+.veggie-burst {
+  position: absolute;
+  font-size: 2.5rem;
+  pointer-events: none;
+  animation: vegScatter 0.8s cubic-bezier(0.1, 0.9, 0.2, 1) forwards;
+  will-change: transform, opacity;
+  z-index: 20;
+}
+
+@keyframes fatFall {
+  0% { top: -80px; transform: rotate(0deg); }
+  100% { top: 110vh; transform: rotate(360deg); }
+}
+
+@keyframes vegScatter {
+  0% { transform: translate(0, 0) scale(0.5) rotate(0deg); opacity: 1; }
+  100% { transform: translate(var(--tx), var(--ty)) scale(1.5) rotate(720deg); opacity: 0; }
+}
+
+/* Keep the loading overlay on top but let clicks pass to game */
+.loading-stage {
+  position: relative;
+  min-height: 80vh;
+}
+
+.loading-overlay {
+  position: relative;
+  z-index: 15;
+  pointer-events: none;
+  background: radial-gradient(circle at center, rgba(13, 17, 23, 0.8) 0%, rgba(13, 17, 23, 0.98) 100%);
+  padding: 48px;
+  border-radius: 32px;
+  border: 1px solid rgba(255,255,255,0.08);
+  box-shadow: 0 30px 80px rgba(0,0,0,0.6), inset 0 2px 20px rgba(255,255,255,0.03);
+  backdrop-filter: blur(12px);
+  max-width: 500px;
+  width: 100%;
 }
