@@ -348,20 +348,12 @@ function setupScrubbing(video) {
     window.addEventListener('mousemove', (e) => {
       if (window.innerWidth <= 768) return;
       
-      const v = document.getElementById('landing-video');
       const content = document.querySelector('.hero-content');
-      
       const xPos = e.clientX / window.innerWidth;
       const yPos = e.clientY / window.innerHeight;
       
-      if (v && v.duration) {
-        // Scrub video smoothly
-        const progress = Math.max(0, Math.min(1, xPos));
-        targetVideoTime = progress * (v.duration - 0.05); // prevent hitting the exact end
-      }
-      
       if (content) {
-        // 3D Parallax Tilt Effect
+        // 3D Parallax Tilt Effect only
         const tiltX = (0.5 - yPos) * 12; // tilt up to 6deg based on Y
         const tiltY = (xPos - 0.5) * 12; // tilt up to 6deg based on X
         content.style.transform = `perspective(1200px) rotateX(${tiltX}deg) rotateY(${tiltY}deg) scale3d(1.02, 1.02, 1.02)`;
@@ -379,14 +371,15 @@ function setupScrubbing(video) {
     window.addEventListener('scroll', () => {
       const v = document.getElementById('landing-video');
       const container = document.getElementById('cinematic-landing');
-      if (!v || !container || window.innerWidth > 768) return;
+      // Execute scroll scrubbing on ALL screen sizes
+      if (!v || !container) return;
       
       // Calculate scroll progress relative to the cinematic section only
       const maxScroll = container.offsetHeight - window.innerHeight;
       if (maxScroll <= 0) return;
       
       const progress = window.scrollY / maxScroll;
-      targetVideoTime = Math.max(0, Math.min(1, progress)) * v.duration;
+      targetVideoTime = Math.max(0, Math.min(1, progress)) * (v.duration - 0.05);
     }, { passive: true });
   }
 }

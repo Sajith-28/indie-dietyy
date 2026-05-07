@@ -1290,11 +1290,9 @@ select option {
   position: relative;
 }
 
-/* Force 300vh on mobile to allow scroll scrubbing */
-@media (max-width: 768px) {
-  .cinematic-landing {
-    min-height: 300vh;
-  }
+/* Force 300vh everywhere to allow scroll scrubbing for the cinematic video */
+.cinematic-landing {
+  min-height: 300vh;
 }
 
 /* Fixed container so the video stays in place while scrolling */
