@@ -321,49 +321,110 @@ function bindCinematicVideo() {
 }
 
 let globalScrubHandlersAttached = false;
-let targetScrollProgress = 0;
-let smoothScrollProgress = 0;
 
-let isVideoSeeking = false;
-let seekTimeout = null;
+// ─── VIRTUAL TIMELINE ENGINE ───────────────────────────────────
+// Architecture: Raw scroll → targetProgress → smoothProgress (spring) → committedTime (seek-coalesced)
+// This 3-layer pipeline ensures the video decoder is never thrashed.
+
+const timeline = {
+  target: 0,          // Raw scroll position (0-1), updated instantly on scroll
+  smooth: 0,          // Spring-smoothed virtual position (0-1), updated every rAF
+  velocity: 0,        // Current scroll velocity (for adaptive behavior)
+  committed: -1,      // Last time actually written to video.currentTime
+  lastScrollTs: 0,    // Timestamp of last scroll event
+  lastSeekTs: 0,      // Timestamp of last successful seek commit
+  isSeeking: false,   // True while the decoder is processing a seek
+  duration: 0,        // Cached video duration
+};
 
 function setupScrubbing(video) {
+  timeline.duration = video.duration;
+  
+  // Listen for decoder completion
   video.addEventListener('seeked', () => {
-    isVideoSeeking = false;
-    if (seekTimeout) clearTimeout(seekTimeout);
+    timeline.isSeeking = false;
   });
-
-  const updateVideoTime = () => {
+  
+  // ── MAIN ANIMATION LOOP ──────────────────────────────────────
+  const tick = (now) => {
     const v = document.getElementById('landing-video');
-    if (!v || !v.duration) return;
-    
-    // 1. Smooth the raw scroll input (turns chunky mouse wheels into buttery glides)
-    smoothScrollProgress += (targetScrollProgress - smoothScrollProgress) * 0.05;
-    
-    // 2. Calculate ideal video time from the smoothed scroll
-    const idealVideoTime = smoothScrollProgress * (v.duration - 0.05);
-    
-    const diff = idealVideoTime - v.currentTime;
-    
-    // 3. Sync video to ideal time, ensuring we don't micro-thrash the decoder
-    if (Math.abs(diff) > 0.04 && !isVideoSeeking) {
-      isVideoSeeking = true;
-      // Allow heavy middle-video frames up to 150ms to decode without interrupting them
-      seekTimeout = setTimeout(() => { isVideoSeeking = false; }, 150);
-      
-      // Direct assignment since the source variable is beautifully smoothed
-      v.currentTime = idealVideoTime;
+    if (!v || !v.duration) {
+      cinematicVideoAnimationId = requestAnimationFrame(tick);
+      return;
     }
     
-    cinematicVideoAnimationId = requestAnimationFrame(updateVideoTime);
+    // Cache duration (it can change if the video is still loading)
+    timeline.duration = v.duration;
+    
+    // ── Layer 1: Spring smoothing ──
+    // Critically-damped spring: smooth but no oscillation.
+    // Factor 0.06 = very smooth glide. Higher = snappier but choppier.
+    const delta = timeline.target - timeline.smooth;
+    timeline.velocity = delta * 0.06;
+    timeline.smooth += timeline.velocity;
+    
+    // Snap when extremely close (prevents infinite micro-convergence)
+    if (Math.abs(delta) < 0.0005) {
+      timeline.smooth = timeline.target;
+      timeline.velocity = 0;
+    }
+    
+    // ── Layer 2: Calculate ideal video time ──
+    const idealTime = timeline.smooth * (timeline.duration - 0.01);
+    
+    // ── Layer 3: Seek coalescing ──
+    // Only commit a seek if:
+    //   1. The decoder is NOT busy processing a previous seek
+    //   2. Enough time has passed since the last seek (adaptive interval)
+    //   3. The difference is visually meaningful
+    const timeSinceLastSeek = now - timeline.lastSeekTs;
+    const diffFromCommitted = Math.abs(idealTime - timeline.committed);
+    
+    // Adaptive seek interval: heavier in the middle/end of the video
+    // MP4 keyframes cluster at the start; middle has mostly P/B-frames
+    // which are MUCH more expensive to decode via random seek.
+    const progressRatio = timeline.smooth;
+    const isHeavyZone = progressRatio > 0.15 && progressRatio < 0.95;
+    const minSeekInterval = isHeavyZone ? 80 : 50; // ms between seeks
+    const minSeekDiff = isHeavyZone ? 0.08 : 0.04; // seconds of video time
+    
+    const isScrolling = (now - timeline.lastScrollTs) < 200;
+    
+    if (
+      !timeline.isSeeking &&
+      timeSinceLastSeek > minSeekInterval &&
+      diffFromCommitted > minSeekDiff
+    ) {
+      timeline.isSeeking = true;
+      timeline.committed = idealTime;
+      timeline.lastSeekTs = now;
+      v.currentTime = idealTime;
+    }
+    
+    // ── Settling: when scrolling stops, gently converge to exact target ──
+    if (
+      !isScrolling &&
+      !timeline.isSeeking &&
+      diffFromCommitted > 0.01 &&
+      timeSinceLastSeek > 250
+    ) {
+      timeline.isSeeking = true;
+      timeline.committed = idealTime;
+      timeline.lastSeekTs = now;
+      v.currentTime = idealTime;
+    }
+    
+    cinematicVideoAnimationId = requestAnimationFrame(tick);
   };
   
   if (cinematicVideoAnimationId) cancelAnimationFrame(cinematicVideoAnimationId);
-  cinematicVideoAnimationId = requestAnimationFrame(updateVideoTime);
+  cinematicVideoAnimationId = requestAnimationFrame(tick);
 
+  // ── EVENT LISTENERS (attached once) ──────────────────────────
   if (!globalScrubHandlersAttached) {
     globalScrubHandlersAttached = true;
     
+    // Desktop parallax tilt (mousemove only moves the text, NOT the video)
     window.addEventListener('mousemove', (e) => {
       if (window.innerWidth <= 768) return;
       
@@ -372,14 +433,13 @@ function setupScrubbing(video) {
       const yPos = e.clientY / window.innerHeight;
       
       if (content) {
-        // 3D Parallax Tilt Effect only
-        const tiltX = (0.5 - yPos) * 12; // tilt up to 6deg based on Y
-        const tiltY = (xPos - 0.5) * 12; // tilt up to 6deg based on X
+        const tiltX = (0.5 - yPos) * 12;
+        const tiltY = (xPos - 0.5) * 12;
         content.style.transform = `perspective(1200px) rotateX(${tiltX}deg) rotateY(${tiltY}deg) scale3d(1.02, 1.02, 1.02)`;
       }
     }, { passive: true });
     
-    // Reset parallax when mouse leaves window
+    // Reset parallax when mouse leaves
     document.addEventListener('mouseleave', () => {
       const content = document.querySelector('.hero-content');
       if (content && window.innerWidth > 768) {
@@ -387,17 +447,17 @@ function setupScrubbing(video) {
       }
     });
 
+    // ── SCROLL HANDLER ──
+    // Only sets the raw target. Never touches the video directly.
     window.addEventListener('scroll', () => {
-      const v = document.getElementById('landing-video');
       const container = document.getElementById('cinematic-landing');
-      // Execute scroll scrubbing on ALL screen sizes
-      if (!v || !container) return;
+      if (!container) return;
       
-      // Calculate scroll progress relative to the cinematic section only
       const maxScroll = container.offsetHeight - window.innerHeight;
       if (maxScroll <= 0) return;
       
-      targetScrollProgress = Math.max(0, Math.min(1, window.scrollY / maxScroll));
+      timeline.target = Math.max(0, Math.min(1, window.scrollY / maxScroll));
+      timeline.lastScrollTs = performance.now();
     }, { passive: true });
   }
 }
@@ -440,7 +500,7 @@ function renderLanding() {
     <div class="landing-page-wrapper">
       <main class="view cinematic-landing" id="cinematic-landing">
         <div class="video-container" id="video-container">
-          <video id="landing-video" class="cinematic-video" preload="metadata" muted playsinline>
+          <video id="landing-video" class="cinematic-video" preload="auto" muted playsinline>
             <source media="(max-width: 768px)" src="/Animation/Mobile.mp4" type="video/mp4">
             <source src="/Animation/desktop.mp4" type="video/mp4">
           </video>
@@ -454,7 +514,7 @@ function renderLanding() {
                 ${state.plan ? `<button class="btn btn-secondary" id="view-last-plan-btn" type="button" data-action="result">${icon('utensils')} ${esc(t('viewLastPlan'))}</button>` : ''}
               </div>
               <div class="interaction-hint">
-                <span class="hint-desktop">${icon('pulse')} Move cursor to explore</span>
+                <span class="hint-desktop">${icon('pulse')} Scroll down to explore</span>
                 <span class="hint-mobile">${icon('pulse')} Scroll down to explore</span>
               </div>
             </div>
