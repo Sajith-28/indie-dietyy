@@ -338,19 +338,20 @@ function setupScrubbing(video) {
     if (!v || !v.duration) return;
     
     // 1. Smooth the raw scroll input (turns chunky mouse wheels into buttery glides)
-    smoothScrollProgress += (targetScrollProgress - smoothScrollProgress) * 0.08;
+    smoothScrollProgress += (targetScrollProgress - smoothScrollProgress) * 0.05;
     
     // 2. Calculate ideal video time from the smoothed scroll
     const idealVideoTime = smoothScrollProgress * (v.duration - 0.05);
     
     const diff = idealVideoTime - v.currentTime;
     
-    // 3. Sync video to ideal time, locked to ~30fps max to protect decoder
-    if (Math.abs(diff) > 0.01 && !isVideoSeeking) {
+    // 3. Sync video to ideal time, ensuring we don't micro-thrash the decoder
+    if (Math.abs(diff) > 0.04 && !isVideoSeeking) {
       isVideoSeeking = true;
-      seekTimeout = setTimeout(() => { isVideoSeeking = false; }, 33);
+      // Allow heavy middle-video frames up to 150ms to decode without interrupting them
+      seekTimeout = setTimeout(() => { isVideoSeeking = false; }, 150);
       
-      // Direct assignment since the source variable is already beautifully smoothed
+      // Direct assignment since the source variable is beautifully smoothed
       v.currentTime = idealVideoTime;
     }
     
