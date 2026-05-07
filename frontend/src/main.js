@@ -270,10 +270,10 @@ function currentStep() {
 }
 
 function transitionTo(page, step = state.step) {
-  // Determine cinematic direction
   const order = ['landing', 'wizard', 'generating', 'result'];
   const currentIndex = order.indexOf(state.page);
   const nextIndex = order.indexOf(page);
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   
   if (page === 'wizard' && state.page === 'wizard') {
     state.direction = step > state.step ? 'forward' : 'backward';
@@ -281,20 +281,34 @@ function transitionTo(page, step = state.step) {
     state.direction = nextIndex >= currentIndex ? 'forward' : 'backward';
   }
 
-  // Trigger cinematic exit animation on current view
   const currentView = document.querySelector('.view-wrapper');
   if (currentView) {
     currentView.classList.add(`exit-${state.direction}`);
   }
 
-  window.setTimeout(() => {
+  const completeTransition = () => {
     state.page = page;
     state.step = step;
     state.error = '';
     persist();
     render();
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 300);
+    window.scrollTo({ top: 0, behavior: reduceMotion ? 'auto' : 'smooth' });
+  };
+
+  if (!currentView || reduceMotion) {
+    completeTransition();
+    return;
+  }
+
+  let finished = false;
+  const finishOnce = () => {
+    if (finished) return;
+    finished = true;
+    completeTransition();
+  };
+
+  currentView.addEventListener('animationend', finishOnce, { once: true });
+  window.setTimeout(finishOnce, 420);
 }
 
 function render() {
@@ -311,6 +325,7 @@ function render() {
   bindEvents();
   bindHeroTilt();
   bindCinematicVideo();
+  bindFuturisticCursor();
   
   if (state.page === 'generating') {
     bindMiniGame();
@@ -1152,7 +1167,7 @@ function bindHeroTilt() {
 
 let miniGameLoopId = null;
 
-function bindMiniGame() {
+function bindMiniGameLegacy() {
   const container = document.getElementById('mini-game-container');
   if (!container) return;
 
@@ -1222,6 +1237,164 @@ function bindMiniGame() {
     miniGameLoopId = requestAnimationFrame(spawnFat);
   };
   
+  if (miniGameLoopId) cancelAnimationFrame(miniGameLoopId);
+  miniGameLoopId = requestAnimationFrame(spawnFat);
+}
+
+let futuristicCursorBound = false;
+let lastPointer = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
+
+function bindFuturisticCursor() {
+  const hasFinePointer = window.matchMedia('(pointer: fine)').matches;
+  document.body.classList.toggle('has-custom-cursor', hasFinePointer);
+
+  if (!hasFinePointer) {
+    document.getElementById('futuristic-cursor')?.remove();
+    return;
+  }
+
+  let cursor = document.getElementById('futuristic-cursor');
+  if (!cursor) {
+    cursor = document.createElement('div');
+    cursor.id = 'futuristic-cursor';
+    cursor.className = 'futuristic-cursor';
+    cursor.innerHTML = '<span class="cursor-sight"></span><span class="cursor-barrel"></span>';
+    document.body.appendChild(cursor);
+  }
+
+  cursor.style.setProperty('--cursor-x', `${lastPointer.x}px`);
+  cursor.style.setProperty('--cursor-y', `${lastPointer.y}px`);
+
+  if (futuristicCursorBound) return;
+  futuristicCursorBound = true;
+
+  window.addEventListener('pointermove', (event) => {
+    if (event.pointerType === 'touch') return;
+    lastPointer = { x: event.clientX, y: event.clientY };
+    const activeCursor = document.getElementById('futuristic-cursor');
+    if (!activeCursor) return;
+    activeCursor.style.setProperty('--cursor-x', `${event.clientX}px`);
+    activeCursor.style.setProperty('--cursor-y', `${event.clientY}px`);
+  }, { passive: true });
+
+  window.addEventListener('pointerdown', (event) => {
+    if (event.pointerType === 'touch') return;
+    const activeCursor = document.getElementById('futuristic-cursor');
+    if (!activeCursor) return;
+    activeCursor.classList.remove('is-firing');
+    activeCursor.getBoundingClientRect();
+    activeCursor.classList.add('is-firing');
+  }, { passive: true });
+}
+
+function createShotEffect(x, y, options = {}) {
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const isTouch = options.pointerType === 'touch';
+  const originX = Number.isFinite(options.originX) ? options.originX : x;
+  const originY = Number.isFinite(options.originY) ? options.originY : y;
+  const dx = x - originX;
+  const dy = y - originY;
+  const length = Math.max(18, Math.hypot(dx, dy));
+  const angle = Math.atan2(dy, dx);
+
+  const muzzle = document.createElement('span');
+  muzzle.className = `shot-muzzle${isTouch ? ' touch-shot' : ''}`;
+  muzzle.style.left = `${x}px`;
+  muzzle.style.top = `${y}px`;
+  document.body.appendChild(muzzle);
+
+  if (!reduceMotion) {
+    const bullet = document.createElement('span');
+    bullet.className = 'shot-trail';
+    bullet.style.left = `${originX}px`;
+    bullet.style.top = `${originY}px`;
+    bullet.style.width = `${Math.min(length, window.innerWidth * 0.9)}px`;
+    bullet.style.transform = `rotate(${angle}rad)`;
+    document.body.appendChild(bullet);
+    window.setTimeout(() => bullet.remove(), 280);
+  }
+
+  window.setTimeout(() => muzzle.remove(), reduceMotion ? 120 : 360);
+}
+
+function bindMiniGame() {
+  const container = document.getElementById('mini-game-container');
+  if (!container) return;
+
+  let score = 0;
+  let spawnRate = window.matchMedia('(max-width: 680px)').matches ? 1350 : 1150;
+  let lastSpawn = 0;
+  const hazards = ['BAD', 'SUGAR', 'FRY', 'OIL', 'JUNK'];
+  const bursts = ['OK', '+', 'FIT', 'AI'];
+  const scoreBoard = document.getElementById('game-score');
+
+  const fireFrom = (event) => {
+    const isTouch = event.pointerType === 'touch';
+    createShotEffect(event.clientX, event.clientY, {
+      pointerType: event.pointerType,
+      originX: isTouch ? window.innerWidth / 2 : lastPointer.x,
+      originY: isTouch ? window.innerHeight - 34 : lastPointer.y,
+    });
+  };
+
+  const hitEnemy = (enemy, event) => {
+    if (!enemy || !enemy.parentElement) return;
+
+    score += 1;
+    if (scoreBoard) scoreBoard.innerText = score;
+
+    const rect = enemy.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+    enemy.remove();
+
+    for (let i = 0; i < 4; i += 1) {
+      const burst = document.createElement('div');
+      burst.className = 'veggie-burst';
+      burst.innerText = bursts[Math.floor(Math.random() * bursts.length)];
+      burst.style.left = `${centerX}px`;
+      burst.style.top = `${centerY}px`;
+      burst.style.setProperty('--tx', `${Math.random() * 150 - 75}px`);
+      burst.style.setProperty('--ty', `${Math.random() * -115 - 35}px`);
+      document.body.appendChild(burst);
+      window.setTimeout(() => burst.remove(), 760);
+    }
+
+    fireFrom(event);
+  };
+
+  container.addEventListener('pointerdown', (event) => {
+    event.preventDefault();
+    const enemy = event.target.closest('.fat-enemy');
+    if (enemy) hitEnemy(enemy, event);
+    else fireFrom(event);
+  });
+
+  const spawnFat = (now) => {
+    if (state.page !== 'generating') {
+      if (miniGameLoopId) cancelAnimationFrame(miniGameLoopId);
+      return;
+    }
+
+    if (now - lastSpawn > spawnRate) {
+      lastSpawn = now;
+      spawnRate = Math.max(window.innerWidth < 680 ? 620 : 420, spawnRate - 45);
+
+      const fat = document.createElement('div');
+      fat.className = 'fat-enemy';
+      fat.innerText = hazards[Math.floor(Math.random() * hazards.length)];
+      fat.style.left = `${Math.random() * 78 + 8}%`;
+      fat.style.animationDuration = `${Math.random() * 1.5 + (window.innerWidth < 680 ? 3.4 : 2.7)}s`;
+      container.appendChild(fat);
+
+      window.setTimeout(() => {
+        if (fat.parentElement) fat.remove();
+      }, 5000);
+    }
+
+    miniGameLoopId = requestAnimationFrame(spawnFat);
+  };
+
   if (miniGameLoopId) cancelAnimationFrame(miniGameLoopId);
   miniGameLoopId = requestAnimationFrame(spawnFat);
 }
