@@ -1344,6 +1344,10 @@ select option {
   display: flex;
   flex-direction: column;
   align-items: center;
+  /* 3D Parallax setup */
+  transform-style: preserve-3d;
+  transition: transform 120ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  will-change: transform;
   /* Add subtle float animation */
   animation: viewEnter 800ms ease-out both;
 }
