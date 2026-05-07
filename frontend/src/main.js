@@ -604,10 +604,10 @@ function renderWizard() {
         <p class="rail-title">${esc(t('yourProfile'))}</p>
         <div class="step-list">
           ${list.map((step, index) => `
-            <div class="step-pill ${index === state.step ? 'is-active' : ''} ${index < state.step ? 'is-done' : ''}">
+            <button class="step-pill ${index === state.step ? 'is-active' : ''} ${index < state.step ? 'is-done' : ''}" type="button" data-action="step" data-step-index="${index}" ${index === state.step ? 'aria-current="step"' : ''}>
               <span class="step-number">${index < state.step ? icon('check') : index + 1}</span>
               <strong>${esc(t(step.titleKey))}</strong>
-            </div>
+            </button>
           `).join('')}
         </div>
       </aside>
@@ -943,6 +943,11 @@ function handleAction(event) {
     transitionTo('wizard', Math.min(state.step, visibleSteps().length - 1));
   } else if (action === 'prev') {
     transitionTo('wizard', Math.max(0, state.step - 1));
+  } else if (action === 'step') {
+    const stepIndex = Number.parseInt(event.currentTarget.dataset.stepIndex, 10);
+    if (Number.isInteger(stepIndex)) {
+      transitionTo('wizard', Math.max(0, Math.min(stepIndex, visibleSteps().length - 1)));
+    }
   } else if (action === 'next') {
     goNext();
   } else if (action === 'submit') {

@@ -749,14 +749,26 @@ select option {
 }
 
 .step-pill {
+  width: 100%;
   display: grid;
   grid-template-columns: 34px minmax(0, 1fr);
   gap: 10px;
   align-items: center;
+  text-align: left;
   padding: 10px;
   border-radius: 15px;
   color: var(--muted);
   border: 1px solid transparent;
+  background: transparent;
+  cursor: pointer;
+  transition: background 160ms ease, border-color 160ms ease, color 160ms ease, transform 160ms ease;
+}
+
+.step-pill:hover {
+  color: var(--text);
+  background: rgba(255,255,255,0.06);
+  border-color: rgba(145, 209, 255, 0.18);
+  transform: translateX(2px);
 }
 
 .step-pill.is-active {
@@ -767,6 +779,11 @@ select option {
 
 .step-pill.is-done {
   color: #c4ffe8;
+}
+
+.step-pill strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .step-number {
