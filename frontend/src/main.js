@@ -235,6 +235,17 @@ function icon(name) {
   return icons[name] || '';
 }
 
+function brandTitle(cssClass = '') {
+  const title = t('title');
+  // If title contains 'Dietyy' (English or translated), split it
+  if (title.includes('Dietyy')) {
+    const parts = title.split('Dietyy');
+    return `<span class="brand-indie ${cssClass}">${esc(parts[0].trim())}</span> <span class="brand-dietyy ${cssClass}">${esc('Dietyy')}</span>`;
+  }
+  // For fully translated titles (non-English), render as-is
+  return `<span class="${cssClass}">${esc(title)}</span>`;
+}
+
 function bmiValue() {
   const weight = Number.parseFloat(state.profile.weight_kg);
   const height = Number.parseFloat(state.profile.height_cm);
@@ -356,7 +367,7 @@ function renderHeader() {
       <div class="brand-lockup">
         <img class="brand-mark" src="/logo.png" alt="Indie Dietyy Logo" aria-hidden="true" style="padding: 0; object-fit: cover; border: 1px solid rgba(255,255,255,0.1);" />
         <div>
-          <h1 class="brand-title">${esc(t('title'))}</h1>
+          <h1 class="brand-title">${brandTitle()}</h1>
           <p class="brand-subtitle">${esc(t('subtitle'))}</p>
         </div>
       </div>
@@ -395,7 +406,7 @@ function renderLanding() {
           <div class="landing-overlay">
             <div class="hero-content">
               <span class="hero-kicker">${icon('spark')} ${esc(t('appBadge'))}</span>
-              <h2 class="hero-title"><span class="shiny">${esc(t('title'))}</span></h2>
+              <h2 class="hero-title">${brandTitle('shiny')}</h2>
               <p class="hero-copy">${esc(t('landingCopy'))}</p>
               <div class="hero-actions">
                 <button class="btn btn-primary" type="button" data-action="start">${icon('next')} ${esc(t('startProfile'))}</button>

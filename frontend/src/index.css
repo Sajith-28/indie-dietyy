@@ -209,6 +209,17 @@ select option {
   letter-spacing: -0.01em;
 }
 
+/* "Indie" in Helvetica, "Dietyy" in Tempting — both header and hero */
+.brand-indie {
+  font-family: var(--font-primary);
+  font-weight: 900;
+}
+
+.brand-dietyy {
+  font-family: var(--font-display);
+  font-weight: 400;
+}
+
 .brand-subtitle {
   margin: 5px 0 0;
   color: var(--muted);
@@ -325,11 +336,10 @@ select option {
 
 .hero-title {
   margin: 22px 0 18px;
-  font-family: var(--font-display);
   font-size: clamp(3.15rem, 10vw, 7.5rem);
   line-height: 0.87;
   font-weight: 900;
-  letter-spacing: 0.01em;
+  letter-spacing: -0.01em;
 }
 
 .shiny {
