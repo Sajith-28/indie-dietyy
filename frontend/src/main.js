@@ -1283,7 +1283,7 @@ const cursorController = (() => {
 
   const template = (nextMode) => nextMode === 'loading_scope_cursor'
     ? '<span class="scope-ring"></span><span class="scope-cross scope-cross-x"></span><span class="scope-cross scope-cross-y"></span><span class="scope-dot"></span><span class="scope-orbit"></span>'
-    : '<span class="macos-arrow"></span>';
+    : '<img class="premium-cursor-image" src="/cursor-main.png" alt="">';
 
   const cleanupScopeEffects = () => {
     document.querySelectorAll('.scope-shot-trail, .scope-shot-ping').forEach((effect) => effect.remove());

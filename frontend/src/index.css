@@ -1811,46 +1811,50 @@ select option {
 }
 
 .global-cursor.native_macos_cursor {
-  width: 24px;
-  height: 30px;
-  margin: -2px 0 0 -3px;
+  width: 32px;
+  height: 32px;
+  margin: -4px 0 0 -8px;
   transition: opacity 110ms ease;
 }
 
-.macos-arrow {
+.premium-cursor-image {
   position: absolute;
   left: 0;
   top: 0;
-  width: 17px;
-  height: 25px;
-  background: rgba(255,255,255,0.96);
-  clip-path: polygon(0 0, 0 82%, 5px 66%, 9px 100%, 13px 99%, 9px 63%, 18px 62%);
-  filter:
-    drop-shadow(0 1px 0 rgba(0,0,0,0.8))
-    drop-shadow(0 5px 9px rgba(0,0,0,0.3));
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
   transform: translate3d(0, 0, 0) scale(1);
-  transform-origin: 2px 2px;
-  transition: transform 150ms cubic-bezier(.2, .8, .2, 1), filter 150ms ease, opacity 120ms ease;
-}
-
-.macos-arrow::after {
-  content: "";
-  position: absolute;
-  inset: 1px 2px 3px 1px;
-  background: rgba(0,0,0,0.86);
-  clip-path: inherit;
-  z-index: -1;
-}
-
-.global-cursor.native_macos_cursor.is-interactive .macos-arrow {
-  transform: scale(1.08);
+  transform-origin: 25% 12%;
+  opacity: 0.96;
+  user-select: none;
+  -webkit-user-drag: none;
+  image-rendering: auto;
   filter:
-    drop-shadow(0 1px 0 rgba(0,0,0,0.72))
-    drop-shadow(0 8px 14px rgba(56, 200, 255, 0.18));
+    invert(1)
+    drop-shadow(0 1px 0 rgba(0,0,0,0.74))
+    drop-shadow(0 6px 11px rgba(0,0,0,0.28));
+  transition: transform 145ms cubic-bezier(.2, .8, .2, 1), filter 145ms ease, opacity 120ms ease;
+  will-change: transform, filter;
 }
 
-.global-cursor.native_macos_cursor.is-pressing .macos-arrow {
-  transform: scale(0.96);
+.premium-cursor-image::after {
+  content: none;
+}
+
+.global-cursor.native_macos_cursor.is-interactive .premium-cursor-image {
+  transform: scale(1.07);
+  opacity: 1;
+  filter:
+    invert(1)
+    drop-shadow(0 1px 0 rgba(0,0,0,0.72))
+    drop-shadow(0 8px 16px rgba(180, 226, 255, 0.16))
+    drop-shadow(0 5px 10px rgba(0,0,0,0.28));
+}
+
+.global-cursor.native_macos_cursor.is-pressing .premium-cursor-image {
+  transform: scale(0.965);
+  opacity: 0.94;
 }
 
 .scope-shot-trail,
