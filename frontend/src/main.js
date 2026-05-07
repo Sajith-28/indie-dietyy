@@ -324,35 +324,26 @@ let globalScrubHandlersAttached = false;
 let targetScrollProgress = 0;
 let smoothScrollProgress = 0;
 
-let isVideoSeeking = false;
-let seekTimeout = null;
+let lastScrubTime = 0;
 
 function setupScrubbing(video) {
-  video.addEventListener('seeked', () => {
-    isVideoSeeking = false;
-    if (seekTimeout) clearTimeout(seekTimeout);
-  });
-
-  const updateVideoTime = () => {
+  const updateVideoTime = (timestamp) => {
     const v = document.getElementById('landing-video');
     if (!v || !v.duration) return;
     
-    // 1. Smooth the raw scroll input (turns chunky mouse wheels into buttery glides)
-    smoothScrollProgress += (targetScrollProgress - smoothScrollProgress) * 0.05;
+    // 1. Snappy but buttery smooth virtual scroll glide
+    smoothScrollProgress += (targetScrollProgress - smoothScrollProgress) * 0.12;
     
     // 2. Calculate ideal video time from the smoothed scroll
-    const idealVideoTime = smoothScrollProgress * (v.duration - 0.05);
+    const idealVideoTime = smoothScrollProgress * (v.duration - 0.02);
     
-    const diff = idealVideoTime - v.currentTime;
-    
-    // 3. Sync video to ideal time, ensuring we don't micro-thrash the decoder
-    if (Math.abs(diff) > 0.04 && !isVideoSeeking) {
-      isVideoSeeking = true;
-      // Allow heavy middle-video frames up to 150ms to decode without interrupting them
-      seekTimeout = setTimeout(() => { isVideoSeeking = false; }, 150);
-      
-      // Direct assignment since the source variable is beautifully smoothed
-      v.currentTime = idealVideoTime;
+    // 3. Strict 30 FPS hardware lock (33ms) to protect the video decoder.
+    // This prevents 60Hz/120Hz/144Hz monitors from spamming the decoder and causing massive lag.
+    if (timestamp - lastScrubTime > 33) {
+      if (Math.abs(idealVideoTime - v.currentTime) > 0.02) {
+        v.currentTime = idealVideoTime;
+        lastScrubTime = timestamp;
+      }
     }
     
     cinematicVideoAnimationId = requestAnimationFrame(updateVideoTime);
