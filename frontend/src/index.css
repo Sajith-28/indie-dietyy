@@ -219,10 +219,10 @@ select option {
   font-family: var(--font-display);
   font-weight: 400;
   display: inline-block;
-  /* Extra bottom padding for long 'y' descenders */
-  padding: 0.2em 0.2em 0.35em 0.1em;
-  /* Only negative margins on top/sides. Bottom margin 0 allows the padding to push the next element down */
-  margin: -0.2em -0.2em 0 -0.1em;
+  /* Massive padding on all sides to guarantee no clipping for background-clip */
+  padding: 0.4em 0.4em 0.5em 0.3em;
+  /* Negative margins to pull layout back */
+  margin: -0.4em -0.4em -0.1em -0.3em; 
 }
 
 .brand-subtitle {
@@ -342,26 +342,11 @@ select option {
 .hero-title {
   margin: 22px 0 28px;
   font-size: clamp(3.15rem, 10vw, 7.5rem);
-  line-height: 1.15;
+  line-height: 1.25;
   font-weight: 900;
   letter-spacing: -0.01em;
   overflow: visible;
-  padding-top: 0.1em;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.hero-title .brand-indie {
-  position: relative;
-  z-index: 1;
-  line-height: 1;
-}
-
-.hero-title .brand-dietyy {
-  position: relative;
-  z-index: 2;
-  margin: -0.45em -0.2em 0 -0.1em; /* Deep negative top margin to pull Dietyy up */
+  padding: 0.2em 0;
 }
 
 .shiny {
