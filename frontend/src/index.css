@@ -347,6 +347,21 @@ select option {
   letter-spacing: -0.01em;
   overflow: visible;
   padding-top: 0.1em;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.hero-title .brand-indie {
+  position: relative;
+  z-index: 1;
+  line-height: 1;
+}
+
+.hero-title .brand-dietyy {
+  position: relative;
+  z-index: 2;
+  margin: -0.45em -0.2em 0 -0.1em; /* Deep negative top margin to pull Dietyy up */
 }
 
 .shiny {
