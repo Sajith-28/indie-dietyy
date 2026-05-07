@@ -321,7 +321,8 @@ function bindCinematicVideo() {
 }
 
 let globalScrubHandlersAttached = false;
-let targetVideoTime = 0;
+let targetScrollProgress = 0;
+let smoothScrollProgress = 0;
 
 let isVideoSeeking = false;
 let seekTimeout = null;
@@ -336,17 +337,21 @@ function setupScrubbing(video) {
     const v = document.getElementById('landing-video');
     if (!v || !v.duration) return;
     
-    const diff = targetVideoTime - v.currentTime;
+    // 1. Smooth the raw scroll input (turns chunky mouse wheels into buttery glides)
+    smoothScrollProgress += (targetScrollProgress - smoothScrollProgress) * 0.08;
     
-    // Only update if difference is meaningful and decoder is ready
-    if (Math.abs(diff) > 0.03 && !isVideoSeeking) {
+    // 2. Calculate ideal video time from the smoothed scroll
+    const idealVideoTime = smoothScrollProgress * (v.duration - 0.05);
+    
+    const diff = idealVideoTime - v.currentTime;
+    
+    // 3. Sync video to ideal time, locked to ~30fps max to protect decoder
+    if (Math.abs(diff) > 0.01 && !isVideoSeeking) {
       isVideoSeeking = true;
+      seekTimeout = setTimeout(() => { isVideoSeeking = false; }, 33);
       
-      // Safety release timeout (40ms = max 25fps seeks) to prevent deadlocks and thrashing
-      seekTimeout = setTimeout(() => { isVideoSeeking = false; }, 40);
-      
-      // Smooth lerp
-      v.currentTime += diff * 0.45;
+      // Direct assignment since the source variable is already beautifully smoothed
+      v.currentTime = idealVideoTime;
     }
     
     cinematicVideoAnimationId = requestAnimationFrame(updateVideoTime);
@@ -391,8 +396,7 @@ function setupScrubbing(video) {
       const maxScroll = container.offsetHeight - window.innerHeight;
       if (maxScroll <= 0) return;
       
-      const progress = window.scrollY / maxScroll;
-      targetVideoTime = Math.max(0, Math.min(1, progress)) * (v.duration - 0.05);
+      targetScrollProgress = Math.max(0, Math.min(1, window.scrollY / maxScroll));
     }, { passive: true });
   }
 }
