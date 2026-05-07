@@ -219,8 +219,8 @@ select option {
   font-family: var(--font-display);
   font-weight: 400;
   display: inline-block;
-  padding-top: 0.05em;
-  overflow: visible;
+  padding: 0.3em 0.2em;
+  margin: -0.3em -0.2em;
 }
 
 .brand-subtitle {
