@@ -323,17 +323,30 @@ function bindCinematicVideo() {
 let globalScrubHandlersAttached = false;
 let targetVideoTime = 0;
 
+let isVideoSeeking = false;
+let seekTimeout = null;
+
 function setupScrubbing(video) {
+  video.addEventListener('seeked', () => {
+    isVideoSeeking = false;
+    if (seekTimeout) clearTimeout(seekTimeout);
+  });
+
   const updateVideoTime = () => {
     const v = document.getElementById('landing-video');
     if (!v || !v.duration) return;
     
     const diff = targetVideoTime - v.currentTime;
     
-    // Only update if difference is meaningful to prevent decoder thrashing
-    if (Math.abs(diff) > 0.01) {
-      // Very fast lerp (0.5) to keep it tightly bound to cursor, while still smoothing native mouse jitter
-      v.currentTime += diff * 0.5;
+    // Only update if difference is meaningful and decoder is ready
+    if (Math.abs(diff) > 0.03 && !isVideoSeeking) {
+      isVideoSeeking = true;
+      
+      // Safety release timeout (40ms = max 25fps seeks) to prevent deadlocks and thrashing
+      seekTimeout = setTimeout(() => { isVideoSeeking = false; }, 40);
+      
+      // Smooth lerp
+      v.currentTime += diff * 0.45;
     }
     
     cinematicVideoAnimationId = requestAnimationFrame(updateVideoTime);
