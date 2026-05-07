@@ -323,13 +323,27 @@ function bindCinematicVideo() {
 let globalScrubHandlersAttached = false;
 let targetVideoTime = 0;
 
+let isVideoSeeking = false;
+
 function setupScrubbing(video) {
+  // Free the lock whenever the decoder finishes
+  video.addEventListener('seeked', () => {
+    isVideoSeeking = false;
+  });
+
   const updateVideoTime = () => {
     const v = document.getElementById('landing-video');
     if (!v || !v.duration) return;
     
-    // Smooth interpolation (lerping) for buttery scrubbing
-    v.currentTime += (targetVideoTime - v.currentTime) * 0.22;
+    const diff = targetVideoTime - v.currentTime;
+    
+    // Only send a new frame request if the decoder is ready and diff is > 20ms
+    if (Math.abs(diff) > 0.02 && !isVideoSeeking) {
+      isVideoSeeking = true;
+      // Fast interpolation to follow cursor closely without harsh jumps
+      v.currentTime += diff * 0.45;
+    }
+    
     cinematicVideoAnimationId = requestAnimationFrame(updateVideoTime);
   };
   
