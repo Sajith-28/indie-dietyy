@@ -932,7 +932,8 @@ async function loadTranslations() {
     return;
   }
 
-  const cacheKey = `ui_cache_vanilla_v2_${state.language}`;
+  // Bump version to v3 to bust stale caches from old (incomplete) locale files
+  const cacheKey = `ui_cache_vanilla_v3_${state.language}`;
   try {
     const cached = localStorage.getItem(cacheKey);
     if (cached) {
@@ -948,17 +949,20 @@ async function loadTranslations() {
   render();
 
   try {
-    const response = await fetch(`/locales/ui_${state.language}.json`);
+    // Bust CDN/browser cache by appending build timestamp
+    const response = await fetch(`/locales/ui_${state.language}.json?v=3`);
     if (!response.ok) throw new Error('Static UI translations not found');
     const data = await response.json();
     
+    // Map every TEXT key: look up the English value in the locale dict
+    // Falls back to the English value if not translated
     const entries = Object.entries(TEXT);
     state.dynamicText = Object.fromEntries(
-      entries.map(([key, value]) => [key, data[value] || value])
+      entries.map(([key, englishValue]) => [key, data[englishValue] || englishValue])
     );
     localStorage.setItem(cacheKey, JSON.stringify(state.dynamicText));
   } catch (err) {
-    console.error(err);
+    console.error('[i18n] Failed to load translations:', err);
     state.dynamicText = {};
   } finally {
     state.isTranslating = false;

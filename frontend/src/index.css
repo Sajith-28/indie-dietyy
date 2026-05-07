@@ -1,4 +1,62 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+/* ─── Helvetica Font Family ─── */
+@font-face {
+  font-family: 'Helvetica';
+  src: url('/fonts/Helvetica-Light.ttf') format('truetype');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Helvetica';
+  src: url('/fonts/Helvetica.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Helvetica';
+  src: url('/fonts/Helvetica-Oblique.ttf') format('truetype');
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Helvetica';
+  src: url('/fonts/Helvetica-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Helvetica';
+  src: url('/fonts/Helvetica-BoldOblique.ttf') format('truetype');
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'HelveticaCompressed';
+  src: url('/fonts/Helvetica-Compressed.otf') format('opentype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'HelveticaRounded';
+  src: url('/fonts/Helvetica-RoundedBold.otf') format('opentype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ─── Tempting Display Font ─── */
+@font-face {
+  font-family: 'Tempting';
+  src: url('/fonts/Tempting.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
 
 :root {
   color-scheme: dark;
@@ -21,7 +79,9 @@
   --shadow: 0 32px 90px rgba(0, 0, 0, 0.42);
   --radius: 22px;
   --radius-sm: 14px;
-  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-primary: 'Helvetica', 'Arial', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-display: 'Tempting', 'Helvetica', 'Arial', sans-serif;
+  font-family: var(--font-primary);
 }
 
 * {
@@ -143,10 +203,11 @@ select option {
 
 .brand-title {
   margin: 0;
+  font-family: var(--font-display);
   font-size: clamp(1.4rem, 3vw, 2.05rem);
   line-height: 1;
   font-weight: 900;
-  letter-spacing: 0;
+  letter-spacing: 0.01em;
 }
 
 .brand-subtitle {
@@ -265,10 +326,11 @@ select option {
 
 .hero-title {
   margin: 22px 0 18px;
+  font-family: var(--font-display);
   font-size: clamp(3.15rem, 10vw, 7.5rem);
   line-height: 0.87;
   font-weight: 900;
-  letter-spacing: 0;
+  letter-spacing: 0.01em;
 }
 
 .shiny {
@@ -654,9 +716,10 @@ select option {
 
 .step-title {
   margin: 10px 0 8px;
+  font-family: var(--font-display);
   font-size: clamp(2rem, 5vw, 3.8rem);
   line-height: 0.98;
-  letter-spacing: 0;
+  letter-spacing: 0.01em;
 }
 
 .step-copy {
@@ -878,6 +941,7 @@ select option {
 
 .summary-title {
   margin: 0 0 12px;
+  font-family: var(--font-display);
   font-size: clamp(1.55rem, 4vw, 2.6rem);
 }
 
@@ -1335,9 +1399,10 @@ select option {
 
 .about-title {
   margin: 16px 0 24px;
+  font-family: var(--font-display);
   font-size: clamp(2.2rem, 5vw, 3.5rem);
   font-weight: 900;
-  letter-spacing: -0.02em;
+  letter-spacing: 0.01em;
   background: linear-gradient(to right, #fff, #a7e9ff);
   -webkit-background-clip: text;
   color: transparent;
