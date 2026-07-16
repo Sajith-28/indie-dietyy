@@ -63,7 +63,7 @@ Local Development
 1. Backend (Python / FastAPI)
 
 ```powershell
-cd "c:\Users\admin\OneDrive\Desktop\my projects\indie dietyy_v2"
+cd indie-dietyy
 python -m venv .venv
 .\.venv\Scripts\activate
 pip install -r requirements.txt
